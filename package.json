@@ -1,0 +1,12 @@
+{
+  "name": "trading-tutor",
+  "version": "1.0.0",
+  "description": "Professor Fox - learn trading the easy way. Kid-friendly lessons, quizzes, and a multi-provider AI tutor.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.js"
+  },
+  "dependencies": {},
+  "license": "MIT"
+}
