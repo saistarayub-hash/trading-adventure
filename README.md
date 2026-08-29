@@ -1,0 +1,112 @@
+# 🦊 Professor Fox's Trading Adventure
+
+Learn trading the easy way — written like a 10-year-old would understand it.
+Short fun lessons, friendly quizzes, points and levels that add up, and your own AI tutor fox.
+
+## Quick start
+
+Simplest way — just double-click **`index.html`**. Everything runs in your browser. No install.
+
+Or, if you have Node.js:
+
+```bash
+node server.js
+# open http://localhost:8081
+```
+
+With the server running you also get:
+
+- **Accounts & saved progress** — open "Save your adventure!" and sign up. Your stars, streaks and
+  levels are stored on the server (`users.json`), so you can log in from any device. If the server is
+  offline, the app still works as a guest and keeps progress in that browser until you log in again.
+- **Share with friends on your Wi-Fi** — the server prints a `http://192.168.x.x:8081` address at
+  startup. Anyone on your network can open it.
+- **Put it on the real internet in ~2 minutes** — see *Hosting* below.
+
+## Hosting (share it anywhere on the internet)
+
+### Option 1 — free instant tunnel (for a temporary link)
+
+If you have a healthy internet connection on this PC, install **cloudflared** once
+(see [developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads)),
+then:
+
+```bash
+node server.js          # in one terminal
+cloudflared tunnel --url http://localhost:8081   # in another
+```
+
+It prints a public `https://….trycloudflare.com` link. Send that link to anyone — they can sign up
+and save their progress on your PC's server. (The link changes every restart.)
+
+### Option 2 — free hosting with Render (keeps running even when your PC is off)
+
+1. Put this folder on GitHub (a repo whose root is the `trading-tutor` folder).
+2. On [render.com](https://render.com) → **New** → **Web Service** → connect the repo.
+3. Values: **Build command** leave empty · **Start command** `node server.js`
+   · **Instance type** Free.
+4. Render sets the `PORT` automatically. Open the URL it gives you.
+
+That's it — open sign-up, accounts, and per-user saved progress work.
+
+Notes:
+
+- Render's free disk is **temporary**: `users.json` may be wiped when the server restarts. Only a few
+  dozen accounts → fine for friends and family. For a bigger audience, either pay for a persistent
+  disk on Render/Railway, or back up `users.json` from your `node server.js` run occasionally.
+- You can also use [Railway](https://railway.com) with the same `node server.js` command.
+
+### A note about cookies vs tokens
+
+Logging in hands your browser a signed token (stored in localStorage) that lets it update your
+progress. This was deliberately kept dependency-free and simple. For a serious production launch
+(preventing duplicate accounts, abuse, or shared-PC account hijacking) you would add proper account
+verification — the current setup is perfect for learning communities, classrooms and family fun.
+
+## Waking up the Fox brain (the AI)
+
+The fox needs a "brain" (a language model) to make stories, answer questions, and invent brand-new
+quiz questions. You can plug in **any of these** inside the app: open the **"Ask Fox"** button →
+**⚙️ Brain settings** → pick a provider → press **↻ Wake up**.
+
+| Provider | Cost | How to set it up |
+|---|---|---|
+| **Ollama** (runs on your PC) | Free, no key | Download from [ollama.com](https://ollama.com), install, then open a terminal and run `ollama pull llama3.2` (or `ollama pull tinyllama` on a weaker PC). Selected by default. |
+| **Groq** | Free tier | Create a free account at [groq.com](https://groq.com) → API Keys → paste the key into the app. |
+| **Google Gemini** | Free tier | Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey) → paste it in. |
+| **OpenAI (ChatGPT)** | Paid | [platform.openai.com](https://platform.openai.com) → API keys. |
+| **Anthropic (Claude)** | Paid | [console.anthropic.com](https://console.anthropic.com) → API keys. |
+| **OpenRouter** | Pay-as-you-go / free models | [openrouter.ai](https://openrouter.ai) → API keys. |
+| **LM Studio** | Free, runs on your PC | Install [lmstudio.ai](https://lmstudio.ai), start the local server (default `http://localhost:1234`). |
+
+- API keys are stored **only in your own browser** (localStorage). They are never uploaded anywhere —
+  the app talks straight to the provider you chose.
+- When no brain is online, the app still works fully offline with the built-in lessons and questions.
+  The AI features (stories, chat, fresh questions) just light up once a brain wakes up.
+
+## How it works
+
+- **Lessons** — 8 short lessons: Money 101, Stocks & Shares, The Stock Market, Bull vs Bear,
+  Supply & Demand, The Golden Rule (Risk), Reading a Candle, Long vs Short.
+- **Quizzes** — multiple-choice questions after each lesson. Points add up:
+  - +10 first try · +5 second try · +2 later tries · +5 first-time bonus per lesson
+- **Levels** — climb from 🌱 Money Beginner all the way to 👑 Market Master.
+- **Streaks** — answer on the first try to keep your 🔥 streak alive.
+- **Ask Fox** — chat with the AI tutor about anything, with kid-friendly answers.
+
+## Files
+
+- `index.html` — app shell
+- `styles.css` — playful kid-friendly theme
+- `lessons.js` — built-in lessons, questions, and explanations (offline content)
+- `ai.js` — multi-provider AI layer (Ollama, OpenAI, Anthropic, Gemini, Groq, OpenRouter, LM Studio)
+- `app.js` — quiz engine, scoring, levels, chat UI, accounts & progress sync
+- `auth.js` — user accounts, secure password hashing, signed tokens, progress storage
+- `server.js` — web server + accounts API (`/api/…`)
+- `test.js` — smoke tests (run with `node test.js`)
+
+## Fun safety rule
+
+Everything here is **pretend-info for learning**. Real trading can lose real money.
+Rule #1 of trading, taught in Lesson 6: **never risk more than you can afford to lose**.
+This tool is for education, not financial advice.
