@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Professor Fox — Learn Trading the Easy Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="logo">🦊 <span>Professor Fox's</span> <b>Trading Adventure</b></div>
+  <div class="pill pill-score" id="scorePill">⭐ 0 pts</div>
+  <div class="pill pill-user hidden" id="userPill"></div>
+  <button class="pill pill-signout hidden" id="btnSignOut" title="Sign out">↩ Log out</button>
+  <div class="pill" id="levelPill">🌱 Money Beginner</div>
+  <div class="pill" id="streakPill">🔥 0</div>
+  <button class="pill pill-brain" id="brainPill">🧠 checking brain…</button>
+</header>
+
+<main>
+  <section id="view-home">
+    <div class="hero card">
+      <div>
+        <h1>Learn trading the easy way 🌈</h1>
+        <p class="muted">Short, funny lessons. Big friendly quizzes. Your own AI fox explains everything like you're 10. No confusing grown-up words.</p>
+        <div class="progress-block">
+          <div class="progress-label" id="levelProgressLabel">0% to Coin Explorer</div>
+          <div class="progress"><div id="levelProgress" style="width:0%"></div></div>
+          <div class="progress-label muted" id="heroMeta"></div>
+        </div>
+      </div>
+      <div class="fox-emoji" id="foxBubble">🦊</div>
+    </div>
+    <div class="lesson-grid" id="lessonGrid"></div>
+  </section>
+
+  <section id="view-lesson" class="hidden">
+    <div class="card lesson-card-2" id="lessonContent"></div>
+    <div class="card quiz-card" id="quizCard">
+      <div class="quiz-start">Pick a lesson to begin your adventure! 🚀</div>
+    </div>
+  </section>
+</main>
+
+<button class="fab" id="chatFab">🦊<span>Ask Fox</span></button>
+
+<div class="chat-shell hidden" id="chatShell">
+  <div class="chat-head">
+    <span>🦊 Ask Professor Fox</span>
+    <button class="icon-btn" id="chatClose">✕</button>
+  </div>
+  <div class="brain-row">
+    <span class="brain-status" id="chatBrainStatus">🧠 …</span>
+    <button class="mini-btn" id="btnReconnect" title="Test/reconnect brain">↻ Wake up</button>
+  </div>
+  <details class="brain-settings" id="brainSettings">
+    <summary>⚙️ Brain settings (choose which AI joins)</summary>
+    <label>AI Provider</label>
+    <select id="chatProvider"></select>
+    <div id="keyWrap">
+      <label>API Key (stored only in this browser)</label>
+      <input type="password" id="inKey" placeholder="sk-…" autocomplete="off">
+    </div>
+    <div id="baseWrap">
+      <label>Server address</label>
+      <input type="text" id="inBase" placeholder="http://localhost:11434">
+    </div>
+    <label>Model</label>
+    <select id="chatModel"></select>
+    <label>Other model (type your own if not listed)</label>
+    <input type="text" id="inOther" placeholder="e.g. llama3.2:latest">
+    <button class="mini-btn full" id="btnReconnect2">🧠 Test connection & save</button>
+  </details>
+  <div class="chat-messages" id="chatMessages"></div>
+  <form class="chat-input" id="chatForm">
+    <input id="chatInput" placeholder="Ask anything about money or trading…" autocomplete="off">
+    <button type="submit">Send ➤</button>
+  </form>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<div class="overlay hidden" id="loginScreen">
+  <div class="login-card card">
+    <div class="lc-emoji big">🦊</div>
+    <h2>Save your adventure!</h2>
+    <p class="muted">Sign in to keep your stars, streaks and level safe — on any device, anywhere on the internet.</p>
+    <div class="seg" id="seg" data-mode="login">
+      <button class="seg-btn active" data-mode="login">Sign in</button>
+      <button class="seg-btn" data-mode="signup">New account</button>
+    </div>
+    <label>Username</label>
+    <input type="text" id="userName" placeholder="letters, numbers, dots, dashes" autocomplete="username" spellcheck="false">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="at least 6 characters" autocomplete="current-password">
+    <div class="login-err" id="loginErr"></div>
+    <button class="big-btn" id="btnAuth">Sign in 🚀</button>
+    <button class="ghost-btn" id="btnGuest">Just play as guest for now ▶</button>
+  </div>
+</div>
+
+<script src="lessons.js"></script>
+<script src="ai.js"></script>
+<script src="app.js"></script>
+<script>boot();</script>
+</body>
+</html>
