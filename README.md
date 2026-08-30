@@ -16,12 +16,30 @@ node server.js
 
 With the server running you also get:
 
-- **Accounts & saved progress** — open "Save your adventure!" and sign up. Your stars, streaks and
-  levels are stored on the server (`users.json`), so you can log in from any device. If the server is
-  offline, the app still works as a guest and keeps progress in that browser until you log in again.
+- **Accounts & saved progress** — open "Save your adventure!" and sign up (username/password **or
+  "Sign in with Google"**). Your stars, streaks and levels are stored on the server (`users.json`),
+  so you can log in from any device. If the server is offline, the app still works as a guest and
+  keeps progress in that browser until you log in again.
+- **Self-updating lessons** — lessons are stored on the server too (`lessons.json`). The creator
+  account (by default the username **`yubi`**) sees an **"Add / edit a lesson"** card on the home
+  page and can publish new lessons that appear for everyone instantly — no redeploy needed.
 - **Share with friends on your Wi-Fi** — the server prints a `http://192.168.x.x:8081` address at
   startup. Anyone on your network can open it.
 - **Put it on the real internet in ~2 minutes** — see *Hosting* below.
+
+### Turning on "Sign in with Google"
+
+1. In the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) create an
+   **OAuth 2.0 Client ID** (Application type: **Web application**).
+2. In **Authorized JavaScript origins** add your site URL (e.g. `https://your-site.onrender.com`).
+3. Set the **Client ID** as the environment variable `GOOGLE_CLIENT_ID` on your host (Render).
+4. The "Sign in with Google" button then appears on the login card.
+
+### Making yourself the creator (so you can add lessons)
+
+Sign up with the username exactly **`yubi`** (any password) — that account automatically gets the
+👑 creator badge and the lesson editor. The creator name is set with the `CREATOR` environment
+variable (default `yubi`).
 
 ## Hosting (share it anywhere on the internet)
 
@@ -100,9 +118,10 @@ quiz questions. You can plug in **any of these** inside the app: open the **"Ask
 - `styles.css` — playful kid-friendly theme
 - `lessons.js` — built-in lessons, questions, and explanations (offline content)
 - `ai.js` — multi-provider AI layer (Ollama, OpenAI, Anthropic, Gemini, Groq, OpenRouter, LM Studio)
-- `app.js` — quiz engine, scoring, levels, chat UI, accounts & progress sync
-- `auth.js` — user accounts, secure password hashing, signed tokens, progress storage
-- `server.js` — web server + accounts API (`/api/…`)
+- `app.js` — quiz engine, scoring, levels, chat UI, accounts, Google sign-in, lesson editor
+- `auth.js` — user accounts, secure password hashing, signed tokens, progress storage, Google users
+- `server.js` — web server + accounts/lessons API (`/api/…`)
+- `lessons.json` — lessons you publish from the editor (created automatically)
 - `test.js` — smoke tests (run with `node test.js`)
 
 ## Fun safety rule
