@@ -89,7 +89,7 @@ function check(name, cond, detail) {
 }
 
 console.log('== LESSON CONTENT ==');
-check('8 lessons bundled', LESSONS.length === 8, 'got ' + LESSONS.length);
+check('22 lessons bundled', LESSONS.length === 22, 'got ' + LESSONS.length);
 let contentOk = true, detail = '';
 for (const l of LESSONS) {
   if (!l.id || !l.title || !l.easy || !l.tip || !Array.isArray(l.questions) || l.questions.length < 3) { contentOk = false; detail = l.id + ': missing fields'; break; }
@@ -180,6 +180,19 @@ async function main() {
   session.index = session.queue.length;
   finishQuiz();
   check('reveal/retries path finishes cleanly', state.done.risk === true, JSON.stringify(state.done));
+
+  console.log('== MIXED SURPRISE QUIZ ==');
+  const mq = buildMixedQuiz(10);
+  check('surprise quiz builds 10 mixed questions', mq.id === 'surprise' && mq.questions.length === 10, JSON.stringify(mq));
+  const startScore = state.score;
+  openLesson(mq);
+  startQuiz();
+  session.queue = session.lesson.questions.slice(0, 2);
+  for (let i = 0; i < session.queue.length; i++) { session.index = i; session.mistakes = 0; session.locked = false; choose(session.queue[i].answer); }
+  session.index = session.queue.length;
+  finishQuiz();
+  check('mixed quiz awards first-try points with no bonus abuse', state.score === startScore + 20, 'delta=' + (state.score - startScore));
+  check('surprise quiz does not mark a lesson done', state.done.surprise !== true, JSON.stringify(state.done));
 
   console.log('\\nRESULT: ' + pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);
