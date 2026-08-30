@@ -249,6 +249,440 @@ const LESSONS = [
       { q: 'Going “short” means you…', options: ['sell first hoping the price falls so you buy back cheaper', 'buy only bananas', 'go on holiday', 'hold everything forever'], answer: 0, why: 'Short = sell high now, buy back lower later. Advanced! Treat carefully.' },
       { q: 'For a brand-new beginner, it is smartest to…', options: ['start with long trades only', 'short everything immediately', 'skip practising', 'bet the whole piggy bank short'], answer: 0, why: 'Long trades are friendlier while you learn. Walk before you run backwards.' }
     ]
+  },
+  {
+    id: 'wantsneeds',
+    emoji: '🧦',
+    title: 'Wants vs Needs',
+    minutes: '3 min read',
+    easy: 'The Big Idea: Needs are the stuff you must have. Wants are the stuff you just really, really like.',
+    sections: [
+      {
+        h: 'Needs come first',
+        b: 'Needs keep you safe and healthy — food, water, a roof, warm clothes, and a bed. Spend money on needs BEFORE wants, like loading the school bag before the snacks.',
+        ex: 'Rain jacket = need. Sparkly rain jacket with a cape = want.'
+      },
+      {
+        h: 'Wants are still okay',
+        b: 'Wants make life fun — toys, games, ice cream, cinema trips. The trick is choosing a few favourite wants instead of every single one. Same money, happier you.',
+        ex: 'One game you will play 40 times beats ten games you play once.'
+      },
+      {
+        h: 'The pause trick',
+        b: 'Before buying a want, wait one day (or one hour). If you still want it tomorrow, it might be a real favourite — if the buzz faded, you just saved a coin.',
+        ex: 'Put the toy back, walk around the shop once, then decide.'
+      }
+    ],
+    tip: 'The Rule: NEEDS first, then your favourite WANTS. Food, then fun.',
+    questions: [
+      { q: 'Which of these is a NEED?', options: ['a warm hat in winter', 'jelly beans', 'a new video game', 'glow-in-the-dark shoes'], answer: 0, why: 'Keeping warm is a need — we must have it.' },
+      { q: 'Which of these is a WANT?', options: ['a movie ticket', 'milk', 'school shoes that fit', 'medicine when sick'], answer: 0, why: 'A movie ticket is fun but optional — a want.' },
+      { q: 'The pause trick says…', options: ['wait before buying a want', 'buy everything instantly', 'hide your wallet', 'needs are silly'], answer: 0, why: 'Waiting one day shows if you really want it.' },
+      { q: 'A good money plan spends on…', options: ['needs first, then a few favourite wants', 'only wants, always', 'nothing ever', 'the shiniest things first'], answer: 0, why: 'Needs first keeps you safe; wants bring the fun.' }
+    ]
+  },
+  {
+    id: 'compound',
+    emoji: '🪄',
+    title: 'The Magic of Compound Interest',
+    minutes: '3 min read',
+    easy: 'The Big Idea: When your money earns, and that money earns too, it grows like a snowball rolling downhill.',
+    sections: [
+      {
+        h: 'Interest pays you for saving',
+        b: 'A bank (or a savings jar with a deal) gives you extra money just for keeping money there. That extra money is called interest.',
+        ex: 'Save $100, the bank adds $5 of interest — now you have $105.'
+      },
+      {
+        h: 'The snowball effect',
+        b: 'Next year the interest is calculated on the BIGGER amount ($105, not $100). Now you earn interest ON your interest. Each year the snowball gets bigger and faster.',
+        ex: 'Doubling money each year: 1, 2, 4, 8, 16 — the jumps get huge.'
+      },
+      {
+        h: 'Time is the magic ingredient',
+        b: 'Compound grows slow at first, then shockingly fast. That is why grown-ups (and kids) start saving EARLY — time does the heavy lifting.',
+        ex: 'Start at 10 vs 30 = way more snowball at 60.'
+      }
+    ],
+    tip: 'The Rule: Save early, earn interest, and watch money build money. Start NOW.',
+    questions: [
+      { q: 'Interest is…', options: ['extra money you earn for saving', 'a type of sandwich', 'always free money with zero risk', 'just counting coins'], answer: 0, why: 'Interest is the reward for keeping money saved.' },
+      { q: 'Compound means…', options: ['your interest earns interest', 'money always doubles overnight', 'only coins can save', 'interest is removed'], answer: 0, why: 'Interest on top of interest — the snowball.' },
+      { q: 'The best time to start saving is…', options: ['as early as you can', 'when you retire', 'never', 'only at the weekend'], answer: 0, why: 'More time = bigger magic snowball.' },
+      { q: 'If you have $100 and get 5% interest…', options: ['you end with $105', 'you end with $95', 'you lose $5', 'nothing changes'], answer: 0, why: '5% of $100 is $5 of extra money.' }
+    ]
+  },
+  {
+    id: 'inflation',
+    emoji: '🎈',
+    title: 'Inflation — Prices Float Up',
+    minutes: '3 min read',
+    easy: 'The Big Idea: Over time, most things cost a little MORE. Inflation is the balloon slowly filling up prices.',
+    sections: [
+      {
+        h: 'Why prices rise',
+        b: 'People earn more money, ingredients cost more, and things get fancier. Bit by bit, the same ice cream costs more money than it did last year.',
+        ex: 'A comic that cost $2 last year might cost $2.20 this year.'
+      },
+      {
+        h: 'Inflation sneaks away your money',
+        b: 'If your cash hides under the bed, it does not grow — but prices do. So your money quietly buys less each year. That is why saving in a jar has a hidden cost.',
+        ex: '$50 buys fewer toys in 5 years than it does today.'
+      },
+      {
+        h: 'Beat it with growing money',
+        b: 'Interest, investing, and learning skills make your money GROW faster than prices. Then your buying power moves forward, not backwards.',
+        ex: 'Money that earns 5% beats inflation of 3%.'
+      }
+    ],
+    tip: 'The Rule: Prices rise over time. Make your money grow so it keeps up and pulls ahead.',
+    questions: [
+      { q: 'Inflation means…', options: ['prices creep up over time', 'prices always go down', 'money doubles instantly', 'you get free money'], answer: 0, why: 'Inflation = the slow rise in prices.' },
+      { q: 'If your money hides in a jar during inflation…', options: ['it buys fewer things later', 'it doubles', 'it never changes value', 'it turns gold'], answer: 0, why: 'Cash that does not grow slowly loses buying power.' },
+      { q: 'A good defence against inflation is…', options: ['making money grow with interest', 'sleeping on your wallet', 'carrying loose coins', 'ignoring prices'], answer: 0, why: 'Growing money keeps up with, and beats, rising prices.' },
+      { q: 'Two years ago a pizza cost $8. With 4% inflation it now costs about…', options: ['$8.60 something', '$4', '$20', 'still $8 forever'], answer: 0, why: 'Prices edge up each year — that is inflation.' }
+    ]
+  },
+  {
+    id: 'budget',
+    emoji: '📒',
+    title: 'Pocket Money Budgets',
+    minutes: '3 min read',
+    easy: 'The Big Idea: A budget is a simple plan that tells your money where to go BEFORE it is spent.',
+    sections: [
+      {
+        h: 'The four-pile trick',
+        b: 'Sharing is easier with boxes: SPEND a little now, SAVE some for later, SHARE something with others, and INVEST a slice to grow. Even toy shops use plans.',
+        ex: 'Out of $8 pocket money: $3 spend, $3 save, $1 share, $1 grow.'
+      },
+      {
+        h: 'Money hates surprises',
+        b: 'Without a plan, money vanishes in a puff of candy and cheap jewels. A budget means YOU are the boss of your coins, not the candy aisle.',
+        ex: 'Budget the pizza first, then the games not the other way round.'
+      },
+      {
+        h: 'Track a little, smile a lot',
+        b: 'Tally your coins once a week. Seeing where money went feels like finding a map to a treasure you already own.',
+        ex: 'Notebook line: Monday +$3, Tuesday -$1 toy.'
+      }
+    ],
+    tip: 'The Rule: Plan where each coin goes first: spend, save, share, grow.',
+    questions: [
+      { q: 'A budget is…', options: ['a plan for your money', 'a bag of coins', 'a money tree', 'a shop display'], answer: 0, why: 'A budget is the plan for every coin.' },
+      { q: 'Which pile should own a slice of your money?', options: ['all four: spend, save, share, grow', 'only candy', 'only the bank knows', 'none of them'], answer: 0, why: 'Four piles = a balanced plan.' },
+      { q: 'A budget helps you…', options: ['stay in charge of your money', 'lose your coins', 'spend randomly', 'hide from numbers'], answer: 0, why: 'Plans keep YOU as the boss of your cash.' },
+      { q: 'Once a week, a coin tracker should…', options: ['add up where money went', 'be thrown away', 'buy more snacks', 'do sums in a dream'], answer: 0, why: 'Reviewing your plan sharpens your money map.' }
+    ]
+  },
+  {
+    id: 'bank',
+    emoji: '🏦',
+    title: 'Banks, Savings & Interest',
+    minutes: '3 min read',
+    easy: 'The Big Idea: A bank is a giant, ultra-safe piggy bank that pays you free money for keeping your coins there.',
+    sections: [
+      {
+        h: 'How a bank works',
+        b: 'You deposit money (park it there). The bank keeps it REALLY safe and pays you interest. The bank then lends that cash to others who need it — and charges them interest to cover your payment.',
+        ex: 'You save $1,000, bank pays $40 a year. The bank lends it out at $120 a year. Everybody wins.'
+      },
+      {
+        h: 'Savings vs current accounts',
+        b: 'Savings accounts pay more interest because you promise to leave the money alone. Current accounts spend easily but pay little. Pick your pot for the job.',
+        ex: 'Savings = sleeping treasure. Current = money for everyday treats.'
+      },
+      {
+        h: 'Safety guarantee',
+        b: 'In many places your money is insured, even if the bank hits trouble. Your coins are watched over, usually protected, and never in the floorboards.',
+        ex: 'The bank vaults are like a castle with a moat.'
+      }
+    ],
+    tip: 'The Rule: Banks pay interest for keeping money. Savings pots pay the most. Safe and sound.',
+    questions: [
+      { q: 'Interest from a bank means…', options: ['they pay you extra for saving', 'they take your money', 'you pay them to leave', 'coins disappear'], answer: 0, why: 'Interest rewards keeping money in the bank.' },
+      { q: 'Which account usually pays MORE interest?', options: ['a savings account', 'a spending card', 'a sock', 'a wallet'], answer: 0, why: 'Savings accounts reward you for not spending.' },
+      { q: 'A bank protects your money by…', options: ['keeping it safe and insured', 'burying it randomly', 'printing new coins daily', 'lending it to squirrels'], answer: 0, why: 'Vaults, rules, and insurance keep deposits safe.' },
+      { q: 'The bank can lend savings to others because…', options: ['it loans cash and charges interest', 'it steals your coins', 'money grows on trees', 'nobody pays back'], answer: 0, why: 'Lending earns the bank income to pay your interest.' }
+    ]
+  },
+  {
+    id: 'diversify',
+    emoji: '🧺',
+    title: 'Don’t Put All Eggs in One Basket',
+    minutes: '3 min read',
+    easy: 'The Big Idea: Spread your money across lots of companies and things, so one tumble never breaks your whole fortune.',
+    sections: [
+      {
+        h: 'One basket is risky',
+        b: 'If you buy only ONE company and it stumbles, your whole money wobbles. Single bets are thrilling but fragile — like juggling one egg.',
+        ex: 'Only one toy maker? If it flops, your whole fortune flops.'
+      },
+      {
+        h: 'Many baskets share the luck',
+        b: 'Own a little bit of MANY companies and different kinds of things. When one dips, others usually hold you up. The basket gentle-glides instead of smash-landing.',
+        ex: 'Lemonade + umbrella + games: sun or rain, you earn.'
+      },
+      {
+        h: 'Diversification smooths the ride',
+        b: 'Experts say spreading money across companies, bonds, and savings is one of the friendliest ways to invest. Lower drama, steadier gains.',
+        ex: 'A sports team needs all the players, not one superstar.'
+      }
+    ],
+    tip: 'The Rule: Spread your eggs — own many things, never bet the whole treasure on one.',
+    questions: [
+      { q: '“Don’t put all your eggs in one basket” means…', options: ['spread your money around', 'collect eggs', 'buy one huge stock', 'hide your cash'], answer: 0, why: 'Spreading reduces the risk of one big tumble.' },
+      { q: 'Owning one single company is risky because…', options: ['if it dips, all your money dips', 'it is always the best', 'companies never change', 'it is far too spread out'], answer: 0, why: 'A single company = a single point of failure.' },
+      { q: 'Diversification means…', options: ['many different investments', 'one giant gamble', 'only cash', 'never investing'], answer: 0, why: 'Many different things = a smoother ride.' },
+      { q: 'When one investment dips, a diverse portfolio…', options: ['is steadied by the others', 'loses everything', 'can never fail', 'doubles instantly'], answer: 0, why: 'Other holdings cushion the dip.' }
+    ]
+  },
+  {
+    id: 'index',
+    emoji: '🗂️',
+    title: 'Indexes & Index Funds',
+    minutes: '3 min read',
+    easy: 'The Big Idea: An index tracks a big bundle of companies. An index fund lets YOU own a tiny slice of that bundle.',
+    sections: [
+      {
+        h: 'What is an index?',
+        b: 'Teachers use average scores; investors use indexes. An index like the S&P 500 averages lots of famous companies’ prices so we can watch the whole team at once.',
+        ex: 'The class average says how the class is doing, not one student.'
+      },
+      {
+        h: 'An index fund does the buying for you',
+        b: 'You give the fund money; it buys a little piece of every company in the index. One purchase = hundreds of companies. Instant spreading, no juggling!',
+        ex: '$50 into an index fund = a crumb of 500 famous firms.'
+      },
+      {
+        h: 'The lazy-but-smart classic',
+        b: 'Many experts love index funds because they are cheap, simple, and well-spread. Perfect for kids (and parents) who want to invest without picking winners.',
+        ex: 'Buy the whole buffet ticket instead of guessing one dish.'
+      }
+    ],
+    tip: 'The Rule: An index fund owns a slice of MANY companies at once — simple, spread-out investing.',
+    questions: [
+      { q: 'An index (like the S&P 500) is…', options: ['a bundle-average of many companies', 'an internet password', 'a single share', 'a type of coin'], answer: 0, why: 'Indexes track big groups of companies at once.' },
+      { q: 'An index fund lets you…', options: ['own a tiny slice of many companies', 'own one factory', 'skip all rules', 'bet on a single day'], answer: 0, why: 'One fund = lots of companies, instantly spread.' },
+      { q: 'Index funds are loved by experts because they are…', options: ['cheap, simple, and spread out', 'secret and pricey', 'only for billionaires', 'impossible to buy'], answer: 0, why: 'The buffet ticket is the friendly classic.' },
+      { q: 'Watching an index is like watching…', options: ['the whole team\'s class average', 'one player\'s shoes', 'a single coin flip', 'a magic trick'], answer: 0, why: 'The average shows how the whole team fares.' }
+    ]
+  },
+  {
+    id: 'currency',
+    emoji: '💱',
+    title: 'Currencies & Exchange Rates',
+    minutes: '3 min read',
+    easy: 'The Big Idea: Different countries use different money, and swapping it has a price called the exchange rate.',
+    sections: [
+      {
+        h: 'Every place has its own money',
+        b: 'USA uses dollars ($), Europe uses euros (€), UK uses pounds (£), Japan uses yen (¥). One “10” is worth different things in different lands.',
+        ex: 'A grape soda costs $1 in Texas but ¥150 in Tokyo.'
+      },
+      {
+        h: 'Exchange rates flip-flop daily',
+        b: 'The rate at which you swap currencies moves a little every day, based on how much everyone wants each money. Rates even shift overnight!',
+        ex: 'Today $1 = €0.92; next month maybe €0.90 or €0.95.'
+      },
+      {
+        h: 'Travelling = trading currencies',
+        b: 'When you visit abroad you quietly “trade”: hand your local money, receive the local cash at the day’s rate. That swap is a tiny mini-investment.',
+        ex: 'Airport counters show the rate on boards like scores.'
+      }
+    ],
+    tip: 'The Rule: Currencies are different moneys, and swapping one for another uses a daily rate.',
+    questions: [
+      { q: 'Which is TRUE?', options: ['different countries use different money', 'all money is dollars', 'money never changes', 'currencies are free'], answer: 0, why: 'Dollars, euros, pounds, yen — many moneys exist.' },
+      { q: 'An exchange rate is…', options: ['the swap-value between two currencies', 'a maths test', 'a kind of magnet', 'a shop sale'], answer: 0, why: 'The rate sets how much currency trades for.' },
+      { q: 'Exchange rates…', options: ['move a little day by day', 'are frozen forever', 'only change yearly', 'are all identical'], answer: 0, why: 'Daily shifts reflect demand for each money.' },
+      { q: 'When you travel abroad, you…', options: ['swap your money for the local currency', 'keep your money in a dream', 'print new notes', 'pay in jelly beans'], answer: 0, why: 'Travelling means a quiet currency trade at the rate.' }
+    ]
+  },
+  {
+    id: 'psych',
+    emoji: '🎭',
+    title: 'Greed, Fear & Patience',
+    minutes: '3 min read',
+    easy: 'The Big Idea: The market’s wildest swings come from feelings — greedy crowds and panicky crowds. Patience beats both.',
+    sections: [
+      {
+        h: 'FOMO — the fear of being left out',
+        b: 'When prices zoom, FOMO whispers “buy NOW, everyone is winning!” Chasing a hot price is how fortunes are bought at the very top.',
+        ex: 'Everyone yells “up up up!” — that is exactly when to think twice.'
+      },
+      {
+        h: 'Panic — the fear of losing',
+        b: 'When prices crash, panic shouts “sell NOW, save yourself!” Selling in fear locks in losses that patience would have ridden out.',
+        ex: 'Fear sellers sell low; calm sellers wait for the bounce.'
+      },
+      {
+        h: 'The patient hero',
+        b: 'Smart investors feel the fear and the greed, then do the boring healthy thing: think in YEARS, not days. Boring usually wins.',
+        ex: 'Sleepy turtle crosses first — the tortoise always wins.'
+      }
+    ],
+    tip: 'The Rule: Feelings make prices swing. Decide with plans, not panic — patience is a superpower.',
+    questions: [
+      { q: 'FOMO means…', options: ['fear of missing out — buying just because others are', 'a friendly monkey', 'free money online', 'a banana report'], answer: 0, why: 'FOMO makes people chase hot, expensive prices.' },
+      { q: 'Panic selling usually…', options: ['locks in losses at the low point', 'doubles your money', 'moves markets up', 'is always genius'], answer: 0, why: 'Fear sellers sell low and miss the recovery.' },
+      { q: 'The patient approach to investing is…', options: ['thinking in years, not days', 'checking prices every second', 'selling in every drop', 'never buying good things'], answer: 0, why: 'Long-term thinking smooths out the FEELING swings.' },
+      { q: 'When everyone is screaming “buy buy buy!”…', options: ['pause and think before you act', 'buy everything instantly', 'sell your house', 'ignore all rules'], answer: 0, why: 'The loudest moments are often the riskiest.' }
+    ]
+  },
+  {
+    id: 'debt',
+    emoji: '🏷️',
+    title: 'Borrowing, Debt & Interest',
+    minutes: '3 min read',
+    easy: 'The Big Idea: Borrowing money means paying it BACK with extra — the extra is interest. Debt is a promise with a price tag.',
+    sections: [
+      {
+        h: 'Borrowing costs extra',
+        b: 'Friends do not charge interest, but banks do. Borrow $100 and agree to pay back $110 — the extra $10 is the loan’s price.',
+        ex: 'Borrowing = renting money for a little while.'
+      },
+      {
+        h: 'The snowball goes backwards',
+        b: 'Interest on debt compounds TOO — but against you. Unpaid loans grow like a grumpy snowball, so paying on time is the winning move.',
+        ex: '$10 unpaid fees turn into $15, then $22. Ouch.'
+      },
+      {
+        h: 'Good debt vs bad debt',
+        b: 'Borrowing for things that build your future (a tool, an education) can be smart. Borrowing for junk that melts in a week is usually a trap.',
+        ex: 'A bike to earn deliveries = good. Blinking sneakers = sad debt.'
+      }
+    ],
+    tip: 'The Rule: Borrowed money returns with interest. Pay on time, and borrow only for things that help you grow.',
+    questions: [
+      { q: 'When you borrow money you must…', options: ['pay it back plus interest', 'never return it', 'share it with squirrels', 'hide it forever'], answer: 0, why: 'Lending has a price: the extra interest.' },
+      { q: 'Interest on debt…', options: ['grows the longer you owe', 'shrinks each week', 'is always free', 'disappears at night'], answer: 0, why: 'Unpaid debt compounds against you.' },
+      { q: 'Paying your loan late usually means…', options: ['more money owed, extra fees', 'a free holiday', 'the debt vanishes', 'you earn a badge'], answer: 0, why: 'Late payment grows the bill.' },
+      { q: 'A smarter reason to borrow is…', options: ['a tool that helps you earn', 'a flashy trinket you\'ll drop', 'another snack', 'a ticket to anywhere'], answer: 0, why: 'Future-building debts can be worth their cost.' }
+    ]
+  },
+  {
+    id: 'oppcost',
+    emoji: '⏳',
+    title: 'Opportunity Cost',
+    minutes: '3 min read',
+    easy: 'The Big Idea: Every time you choose ONE thing, you quietly give up other things. That hidden give-up is opportunity cost.',
+    sections: [
+      {
+        h: 'Every choice has a price',
+        b: 'Spent the whole week’s coins on one game? Then you cannot buy the comic AND the poster. The thing you DIDN’T choose is the opportunity cost.',
+        ex: 'Ice cream now vs two lollipops later — you pick one.'
+      },
+      {
+        h: 'It is not just money',
+        b: 'Opportunity cost is also TIME. Two hours gaming = two hours you are not building a treehouse, reading, or stacking coins. Choose your hours like coins.',
+        ex: 'One screen hour costs one park hour. Choose wisely.'
+      },
+      {
+        h: 'Comparing choices like a pro',
+        b: 'Before buying, ask: “What else could this coin do?” If the alternative is better, spend there. That tiny habit is big-time money wisdom.',
+        ex: '$5 on a sticker vs $5 saved toward the robot kit.'
+      }
+    ],
+    tip: 'The Rule: Choosing one thing costs the next-best thing. Always check what a coin could do instead.',
+    questions: [
+      { q: 'Opportunity cost is…', options: ['what you give up when you choose', 'a free coupon', 'a type of coin', 'a lucky number'], answer: 0, why: 'The road not taken is the cost of the road taken.' },
+      { q: 'If you buy the game with all your money, you give up…', options: ['the other things that money could buy', 'nothing at all', 'tomorrow', 'your lucky socks'], answer: 0, why: 'Spent coins can no longer buy other things.' },
+      { q: 'Opportunity cost applies to TIME too because…', options: ['hours spent one way can’t be spent another', 'time is fake', 'only money counts', 'clocks are toys'], answer: 0, why: 'Both money and hours are limited — spend them well.' },
+      { q: 'Before buying, a smart kid asks…', options: ['what else could this coin do?', 'which sticker is shiniest?', 'who has the loudest money?', 'can I spend twice?'], answer: 0, why: 'Comparing options shows the real cost.' }
+    ]
+  },
+  {
+    id: 'volatility',
+    emoji: '🌊',
+    title: 'Up and Down Days (Volatility)',
+    minutes: '3 min read',
+    easy: 'The Big Idea: Prices wobble and wiggle every day — that wiggling is volatility. Waves are normal, not an emergency.',
+    sections: [
+      {
+        h: 'Prices surf, not climb',
+        b: 'A stock hardly ever goes in a straight line. It zigs up, zags down, and drifts — that rhythm of swings is volatility. Like waves on the sea.',
+        ex: 'Day 1: +3, Day 2: -1, Day 3: +2. Normal surf!'
+      },
+      {
+        h: 'Big swings = splashy… and scary',
+        b: 'High volatility means bigger ups and bigger downs. It can feel amazing on the up and horrible on the down. Same wave, different moods.',
+        ex: 'A rollercoaster and a seesaw are both just motion.'
+      },
+      {
+        h: 'Tame the waves with time',
+        b: 'Stretched over YEARS, day-to-day waves smooth into a gentle rising tide. Short-term watchers get seasick; long-term sailors enjoy the cruise.',
+        ex: 'A week of drops may still be a year of gains.'
+      }
+    ],
+    tip: 'The Rule: Prices wiggle daily. Waves are normal — ride them with patience and long time horizons.',
+    questions: [
+      { q: 'Volatility is…', options: ['the wiggle and swing of prices', 'a volcano problem', 'a flat line', 'a shopping mania'], answer: 0, why: 'Volatility = the daily up-and-down motion.' },
+      { q: 'A stock that swings +3 then -1 then +2 is…', options: ['normal, wiggly market behaviour', 'a broken computer', 'proof it is lost', 'urgently weird'], answer: 0, why: 'Waves are the sea’s normal rhythm.' },
+      { q: 'Over YEARS, daily volatility tends to…', options: ['smooth into a rising tide', 'double every hour', 'erase all gains', 'turn gold'], answer: 0, why: 'Long horizons soak up the short-term noise.' },
+      { q: 'Feeling seasick about a one-week drop?', options: ['check the year-long trend first', 'sell everything instantly', 'hide under a blanket', 'blame the wind'], answer: 0, why: 'Short waves don\'t decide long journeys.' }
+    ]
+  },
+  {
+    id: 'profit',
+    emoji: '🍰',
+    title: 'How Companies Earn Money',
+    minutes: '3 min read',
+    easy: 'The Big Idea: Companies collect money (revenue), pay their costs, and the leftover sweet slice is profit. Profit makes shares grow.',
+    sections: [
+      {
+        h: 'Revenue vs profit',
+        b: 'Revenue is ALL the money flowing in — every sale, every lemonade. Profit is what remains after paying for lemons, cups, helpers, and rent.',
+        ex: 'Sold $100 of lemonade, costs $70 → profit $30.'
+      },
+      {
+        h: 'Profit makes share prices happy',
+        b: 'When a company earns more profit, it can pay dividends, build new stuff, or buy back shares. Bigger profits usually nudge the share price up.',
+        ex: 'More customers + lower costs = bigger sweet slice.'
+      },
+      {
+        h: 'Watch the costs, kid',
+        b: 'Companies win by raising revenue AND trimming waste. Smart winners do both — like baking more pies with the same stove.',
+        ex: 'Sell more AND spill less sugar = fatter profit.'
+      }
+    ],
+    tip: 'The Rule: Profit = money left after costs. More profit usually means healthier shares.',
+    questions: [
+      { q: 'Revenue is…', options: ['all the money a company takes in', 'the profit only', 'a kind of tax', 'a boss\'s salary'], answer: 0, why: 'Revenue is the total money flowing in.' },
+      { q: 'Profit is…', options: ['what’s left after paying the costs', 'the money lost', 'the rented building', 'the workers\' shoes'], answer: 0, why: 'Profit is the leftover slice after bills.' },
+      { q: 'A company that keeps growing profit usually sees…', options: ['happier share prices', 'losing customers', 'empty shelves', 'no change ever'], answer: 0, why: 'Bigger profits lift the shares.' },
+      { q: 'Profits rise when a company…', options: ['sells more and wastes less', 'only raises prices wildly', 'hides its products', 'stops selling'], answer: 0, why: 'More sales + lower costs = better profit math.' }
+    ]
+  },
+  {
+    id: 'dividends',
+    emoji: '🍬',
+    title: 'Dividends — Share Gifts',
+    minutes: '3 min read',
+    easy: 'The Big Idea: Some companies share their profit with owners as dividends — a cash gift, just for holding shares.',
+    sections: [
+      {
+        h: 'Owning a slice = a share of the pie',
+        b: 'When you own shares, you own a scrap of the company. If the company earns a fat profit, it sometimes shares a slice with its owners as a dividend.',
+        ex: 'Own 10 shares, get $2 per share → $20 gift.'
+      },
+      {
+        h: 'Dividends can flow again and again',
+        b: 'Some companies pay dividends every few months, like pocket money from the company to you. Collecting them is called dividend income.',
+        ex: 'Every pizza sold is a crumb you receive as owner.'
+      },
+      {
+        h: 'Reinvest the gifts to make them grow',
+        b: 'Use the dividend cash to buy MORE shares, and next gift is bigger. Gifts that buy gifts — the snowball strikes again!',
+        ex: 'Gift $20 buys more shares → next gift is higher.'
+      }
+    ],
+    tip: 'The Rule: Dividends are profit-slices shared with owners. Reinvest them to grow the party.',
+    questions: [
+      { q: 'A dividend is…', options: ['profit shared with share owners', 'a bank loan', 'a shopping list', 'a company invoice'], answer: 0, why: 'Dividends share company profit with owners.' },
+      { q: 'To receive dividends you usually need to…', options: ['own shares in the company', 'work there daily', 'live next door', 'buy a poster of it'], answer: 0, why: 'Owning shares makes you an owner.' },
+      { q: 'Many dividend companies pay…', options: ['regularly, like pocket money', 'only once ever', 'never, by law', 'in coupons only'], answer: 0, why: 'Regular dividend income is common.' },
+      { q: 'A smart move with dividend cash is…', options: ['reinvesting to buy more shares', 'burning the receipt', 'throwing it away', 'ignoring it'], answer: 0, why: 'Reinvested gifts grow into bigger gifts.' }
+    ]
   }
 ];
 
