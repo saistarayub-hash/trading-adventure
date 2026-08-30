@@ -3,10 +3,13 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 const AUTH = require('./auth');
 
 const PORT = process.env.PORT || 8081;
 const ROOT = __dirname;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const CREATOR = AUTH.CREATOR;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -65,11 +68,117 @@ function bearer(req) {
   return m ? m[1] : null;
 }
 
+function b64uToBuf(s) {
+  return Buffer.from(String(s).replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+}
+
+async function verifyGoogle(credential) {
+  if (!GOOGLE_CLIENT_ID) throw new Error('Google sign-in is not set up yet on this site.');
+  const parts = String(credential || '').split('.');
+  if (parts.length !== 3) throw new Error('Invalid Google token.');
+  const header = JSON.parse(b64uToBuf(parts[0]).toString('utf8'));
+  const payload = JSON.parse(b64uToBuf(parts[1]).toString('utf8'));
+  const r = await fetch('https://www.googleapis.com/oauth2/v3/certs');
+  const j = await r.json();
+  const key = (j.keys || []).find((k) => k.kid === header.kid);
+  if (!key) throw new Error('Google signing key not found.');
+  const pub = crypto.createPublicKey({ key: { kty: 'RSA', n: key.n, e: key.e }, format: 'jwk' });
+  const ver = crypto.createVerify('RSA-SHA256');
+  ver.update(parts[0] + '.' + parts[1]);
+  if (!ver.verify(pub, parts[2], 'base64')) throw new Error('Google signature check failed.');
+  if (payload.exp * 1000 < Date.now()) throw new Error('Google login has expired.');
+  if (payload.aud !== GOOGLE_CLIENT_ID) throw new Error('Google login is for a different app.');
+  if (payload.iss !== 'accounts.google.com' && payload.iss !== 'https://accounts.google.com' && payload.iss !== 'https://accounts.google.com/') throw new Error('Google login issuer mismatch.');
+  if (!payload.sub) throw new Error('Google login missing user id.');
+  return payload;
+}
+
+const LS_FILE = process.env.LESSONS_FILE || path.join(ROOT, 'lessons.json');
+let lessonsDb = loadLessons();
+
+function loadLessons() {
+  try {
+    const d = JSON.parse(fs.readFileSync(LS_FILE, 'utf8'));
+    if (d && Array.isArray(d.lessons)) return d;
+  } catch {}
+  return { lessons: [] };
+}
+
+function saveLessons() {
+  fs.mkdirSync(path.dirname(LS_FILE), { recursive: true });
+  const tmp = LS_FILE + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(lessonsDb, null, 2));
+  fs.renameSync(tmp, LS_FILE);
+}
+
+function validateLesson(x) {
+  if (!x || typeof x !== 'object') return null;
+  const id = String(x.id || '').trim().toLowerCase();
+  if (!/^[a-z0-9_-]{2,40}$/.test(id)) return null;
+  const title = String(x.title || '').trim();
+  const easy = String(x.easy || '').trim();
+  const tip = String(x.tip || '').trim();
+  if (!title || !easy || !tip || title.length > 80 || easy.length > 200 || tip.length > 300) return null;
+  const sections = Array.isArray(x.sections)
+    ? x.sections.slice(0, 12).map((s) => {
+        const h = String(s && s.h || '').trim();
+        const b = String(s && s.b || '').trim();
+        const ex = s && s.ex ? String(s.ex).trim() : '';
+        if (!h && !b) return null;
+        return { h: h || b.slice(0, 60), b: b || h, ex: ex || null };
+      }).filter(Boolean)
+    : [];
+  const questions = Array.isArray(x.questions)
+    ? x.questions.slice(0, 20).map((q) => {
+        const qq = String(q && q.q || '').trim();
+        const options = Array.isArray(q.options) && q.options.length === 4 ? q.options.map((o) => String(o).trim()) : null;
+        const answer = Number(q.answer);
+        if (!qq || !options || !options.every(Boolean) || !(answer >= 0 && answer <= 3)) return null;
+        return { q: qq, options, answer, why: String(q.why || '').trim() || '' };
+      }).filter(Boolean)
+    : [];
+  if (sections.length === 0 || questions.length < 3) return null;
+  return {
+    id, title,
+    emoji: String(x.emoji || '📘').trim().slice(0, 8) || '📘',
+    minutes: String(x.minutes || '2 min read').trim().slice(0, 40) || '2 min read',
+    easy, tip,
+    sections,
+    questions,
+    createdBy: CREATOR,
+    updated: Date.now()
+  };
+}
+
 async function handleApi(req, res, pathname) {
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
   if (pathname === '/api/health' && req.method === 'GET') {
     sendJSON(res, 200, { ok: true, name: 'professor-fox', users: AUTH.userCount() });
+    return;
+  }
+
+  if (pathname === '/api/config' && req.method === 'GET') {
+    sendJSON(res, 200, { ok: true, googleClientId: GOOGLE_CLIENT_ID, creator: CREATOR });
+    return;
+  }
+
+  if (pathname === '/api/lessons' && req.method === 'GET') {
+    sendJSON(res, 200, { ok: true, lessons: lessonsDb.lessons.slice() });
+    return;
+  }
+
+  if (pathname === '/api/google' && req.method === 'POST') {
+    if (rateLimited(req.socket.remoteAddress)) { sendJSON(res, 429, { ok: false, error: 'Too many attempts. Please wait a few minutes.' }); return; }
+    let body;
+    try { body = await readBody(req); } catch (e) { sendJSON(res, 400, { ok: false, error: e.message }); return; }
+    let profile;
+    try { profile = await verifyGoogle(body.credential); }
+    catch (e) { sendJSON(res, 401, { ok: false, error: 'Google sign-in failed: ' + e.message }); return; }
+    const r = AUTH.findOrCreateGoogle(profile);
+    if (!r.ok) { sendJSON(res, 400, { ok: false, error: r.error }); return; }
+    const token = AUTH.issueToken(r.user);
+    sendJSON(res, 200, { ok: true, token, user: r.user, role: r.role, progress: r.progress });
     return;
   }
 
@@ -80,7 +189,7 @@ async function handleApi(req, res, pathname) {
     const r = await AUTH.register(body.username, body.password);
     if (!r.ok) { sendJSON(res, 400, { ok: false, error: r.error }); return; }
     const token = AUTH.issueToken(r.user);
-    sendJSON(res, 200, { ok: true, token, user: r.user, progress: AUTH.getProgress(r.user) });
+    sendJSON(res, 200, { ok: true, token, user: r.user, role: AUTH.getRole(r.user), progress: AUTH.getProgress(r.user) });
     return;
   }
 
@@ -91,7 +200,7 @@ async function handleApi(req, res, pathname) {
     const r = await AUTH.login(body.username, body.password);
     if (!r.ok) { sendJSON(res, 401, { ok: false, error: r.error }); return; }
     const token = AUTH.issueToken(r.user);
-    sendJSON(res, 200, { ok: true, token, user: r.user, progress: r.progress });
+    sendJSON(res, 200, { ok: true, token, user: r.user, role: AUTH.getRole(r.user), progress: r.progress });
     return;
   }
 
@@ -104,7 +213,20 @@ async function handleApi(req, res, pathname) {
   }
 
   if (pathname === '/api/me' && req.method === 'GET') {
-    sendJSON(res, 200, { ok: true, user: session.user, progress: AUTH.getProgress(session.user) });
+    sendJSON(res, 200, { ok: true, user: session.user, role: AUTH.getRole(session.user), progress: AUTH.getProgress(session.user) });
+    return;
+  }
+
+  if (pathname === '/api/lessons' && req.method === 'PUT') {
+    if (AUTH.getRole(session.user) !== 'creator') { sendJSON(res, 403, { ok: false, error: 'Only the creator can add or edit lessons.' }); return; }
+    let body;
+    try { body = await readBody(req); } catch (e) { sendJSON(res, 400, { ok: false, error: e.message }); return; }
+    const lesson = validateLesson(body.lesson);
+    if (!lesson) { sendJSON(res, 400, { ok: false, error: 'Lesson did not pass validation. Check every field and the question format.' }); return; }
+    const i = lessonsDb.lessons.findIndex((l) => l.id === lesson.id);
+    if (i >= 0) lessonsDb.lessons[i] = lesson; else lessonsDb.lessons.push(lesson);
+    saveLessons();
+    sendJSON(res, 200, { ok: true, lessons: lessonsDb.lessons.slice() });
     return;
   }
 
