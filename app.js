@@ -16,15 +16,17 @@ const state = Object.assign({ score: 0, streak: 0, bestStreak: 0, done: {} }, St
 
 const API = (typeof location !== 'undefined' && location.protocol === 'file:') ? 'http://localhost:8081' : '';
 
-const auth = { token: Store.get('token') || null, user: Store.get('user') || null };
+const auth = { token: Store.get('token') || null, user: Store.get('user') || null, role: Store.get('role') || 'member' };
 
+let CFG = { googleClientId: null, creator: 'yubi' };
+let serverLessons = [];
 let syncT = null;
 
 function saveState() { Store.set('state', state); scheduleSync(); }
 
 async function apiFetch(path, opts) {
   const ctl = new AbortController();
-  const to = setTimeout(() => ctl.abort(), (opts && opts.timeout) || 6000);
+  const to = setTimeout(() => ctl.abort(), (opts && opts.timeout) || 20000);
   try {
     const r = await fetch(API + path, Object.assign({ signal: ctl.signal }, opts || {}));
     let data = null;
@@ -35,6 +37,14 @@ async function apiFetch(path, opts) {
     return { ok: false, status: 0, error: e.message, network: true };
   } finally {
     clearTimeout(to);
+  }
+}
+
+async function apiFetchRetry(path, opts) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const r = await apiFetch(path, opts);
+    if (!r.network || attempt === 1) return r;
+    await new Promise((ok) => setTimeout(ok, 9000));
   }
 }
 
@@ -50,7 +60,7 @@ async function syncNow() {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth.token },
     body: JSON.stringify({ progress: { score: state.score, streak: state.streak, bestStreak: state.bestStreak, done: state.done } }),
-    timeout: 8000
+    timeout: 15000
   });
   if (r.status === 401) { signOut('Session expired — please sign in again.'); }
   else if (!r.ok && r.network) { toast('⚠ Could not save progress — server unreachable. It will re-sync when back.', 'toast-error'); }
@@ -66,35 +76,84 @@ function applyServerProgress(p) {
 }
 
 async function initAuth() {
-  const h = await apiFetch('/api/health');
+  const h = await apiFetchRetry('/api/health', { timeout: 30000 });
   if (!h.ok) {
-    toast('🦊 Server offline — running as guest. Progress stays on this device. Start the server (node server.js) or use a hosted link to log in.', 'toast-error');
+    toast('🦊 Server is waking up or offline — playing as guest for now. If this is the hosted site, give it about a minute then refresh.', 'toast-error');
+    showLogin();
     return;
   }
   if (auth.token) {
-    const r = await apiFetch('/api/me', { headers: { 'Authorization': 'Bearer ' + auth.token } });
-    if (r.ok) { applyServerProgress(r.data.progress); setSignedIn(r.data.user); }
-    else if (r.status === 401) { auth.token = null; Store.set('token', null); auth.user = null; Store.set('user', null); showLogin(); }
+    const r = await apiFetch('/api/me', { headers: { 'Authorization': 'Bearer ' + auth.token }, timeout: 25000 });
+    if (r.ok) { applyServerProgress(r.data.progress); setSignedIn(r.data.user, r.data.role, false); }
+    else if (r.status === 401) { auth.token = null; Store.set('token', null); auth.user = null; Store.set('user', null); auth.role = 'member'; Store.set('role', null); showLogin(); }
     else showLogin();
   } else {
     showLogin();
   }
 }
 
+async function loadConfig() {
+  const r = await apiFetchRetry('/api/config', { timeout: 30000 });
+  if (r.ok) {
+    CFG = Object.assign(CFG, r.data);
+    if (CFG.googleClientId) setupGoogle();
+  }
+}
+
+function setupGoogle() {
+  if (window.google && window.google.accounts) { renderGoogleButton(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.async = true;
+  s.defer = true;
+  s.onload = renderGoogleButton;
+  document.head.appendChild(s);
+}
+
+function renderGoogleButton() {
+  const wrap = $('#googleWrap');
+  if (!wrap || !window.google || !window.google.accounts) return;
+  wrap.innerHTML = '';
+  window.google.accounts.id.initialize({
+    client_id: CFG.googleClientId,
+    callback: handleGoogleCredential,
+    auto_select: false
+  });
+  window.google.accounts.id.renderButton(wrap, { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill' });
+}
+
+async function handleGoogleCredential(resp) {
+  if (!resp || !resp.credential) { $('#loginErr').textContent = 'Google sign-in did not return a login.'; return; }
+  const err = $('#loginErr');
+  err.textContent = 'Contacting Google…';
+  const r = await apiFetch('/api/google', { method: 'POST', body: JSON.stringify({ credential: resp.credential }), timeout: 30000 });
+  if (!r.ok) { err.textContent = r.error || 'Could not complete Google sign-in.'; return; }
+  completeLogin(r.data);
+}
+
+function completeLogin(data) {
+  auth.token = data.token;
+  Store.set('token', auth.token);
+  applyServerProgress(data.progress || null);
+  setSignedIn(data.user, data.role);
+}
+
 function showLogin() {
   $('#loginScreen').classList.remove('hidden');
 }
 
-function setSignedIn(user) {
+function setSignedIn(user, role, announce) {
   auth.user = user;
+  auth.role = role || 'member';
   Store.set('user', user);
-  $('#userPill').textContent = '👤 ' + user;
+  Store.set('role', auth.role);
+  $('#userPill').textContent = '👤 ' + user + (auth.role === 'creator' ? ' 👑' : '');
   $('#userPill').classList.remove('hidden');
   $('#btnSignOut').classList.remove('hidden');
   $('#loginScreen').classList.add('hidden');
   renderHome();
   syncNow();
-  toast('Welcome, ' + user + '! Your levels are saved to your account. 🎉', 'toast-ok');
+  if (announce !== false) toast((auth.role === 'creator' ? 'Welcome back, creator ' : 'Welcome, ') + user + '! Your levels are saved to your account. 🎉', 'toast-ok');
 }
 
 function setSeg(mode) {
@@ -112,14 +171,11 @@ async function submitAuth() {
   if (!u || !pw) { err.textContent = 'Type a username and password first!'; return; }
   $('#btnAuth').disabled = true;
   $('#btnAuth').textContent = 'Working…';
-  const r = await apiFetch('/api/' + mode, { method: 'POST', body: JSON.stringify({ username: u, password: pw }), timeout: 15000 });
+  const r = await apiFetchRetry('/api/' + mode, { method: 'POST', body: JSON.stringify({ username: u, password: pw }), timeout: 30000 });
   $('#btnAuth').disabled = false;
   $('#btnAuth').textContent = mode === 'login' ? 'Sign in 🚀' : 'Create account 🎉';
   if (!r.ok) { err.textContent = r.error || 'Could not reach the server.'; return; }
-  auth.token = r.data.token;
-  Store.set('token', auth.token);
-  applyServerProgress(r.data.progress || null);
-  setSignedIn(r.data.user);
+  completeLogin(r.data);
 }
 
 function guestMode() {
@@ -131,8 +187,10 @@ function guestMode() {
 function signOut(msg) {
   auth.token = null;
   auth.user = null;
+  auth.role = 'member';
   Store.set('token', null);
   Store.set('user', null);
+  Store.set('role', null);
   $('#userPill').classList.add('hidden');
   $('#btnSignOut').classList.add('hidden');
   showLogin();
@@ -180,7 +238,22 @@ function toast(msg, cls) {
 function switchView(v) {
   $('#view-home').classList.toggle('hidden', v !== 'home');
   $('#view-lesson').classList.toggle('hidden', v !== 'lesson');
+  $('#view-editor').classList.toggle('hidden', v !== 'editor');
   window.scrollTo(0, 0);
+}
+
+function allLessons() {
+  return LESSONS.concat(serverLessons || []);
+}
+
+async function loadServerLessons() {
+  const r = await apiFetchRetry('/api/lessons', { timeout: 25000 });
+  if (r.ok && Array.isArray(r.data.lessons)) {
+    serverLessons = r.data.lessons;
+    renderHome();
+  } else {
+    serverLessons = [];
+  }
 }
 
 function renderHome() {
@@ -200,8 +273,13 @@ function renderHome() {
     totalPossible + ' points available' +
     (state.bestStreak > 0 ? ' · best streak 🔥' + state.bestStreak : '');
   const grid = $('#lessonGrid');
-  grid.innerHTML = LESSONS.map((l) => lessonCard(l)).join('');
+  grid.innerHTML = allLessons().map((l) => lessonCard(l)).join('') +
+    (auth.role === 'creator'
+      ? '<button class="lesson-card card add-lesson" id="btnAddLesson"><div class="lc-emoji">➕</div><h3>Add / edit a lesson</h3><div class="muted small">Create a brand-new lesson that appears here instantly — no redeploy.</div></button>'
+      : '');
   grid.querySelectorAll('.lesson-card').forEach((el) => el.addEventListener('click', () => openLesson(el.dataset.id)));
+  const add = $('#btnAddLesson');
+  if (add) add.addEventListener('click', openLessonEditor);
 }
 
 function lessonCard(l) {
@@ -215,8 +293,100 @@ function lessonCard(l) {
     '</button>';
 }
 
+function openLessonEditor() {
+  if (auth.role !== 'creator') return;
+  renderEditor();
+  switchView('editor');
+}
+
+function renderEditor() {
+  const card = $('#editorCard');
+  card.innerHTML =
+    '<div class="lc-emoji big">✏️</div>' +
+    '<h2>Lesson editor</h2>' +
+    '<p class="muted">Add or update a lesson. It appears on the home page for everyone instantly — no redeploy needed.</p>' +
+    '<label>Lesson id (short, letters/dashes — must be unique)</label><input id="edId" placeholder="e.g. savings">' +
+    '<label>Title 🎓</label><input id="edTitle" placeholder="e.g. The Power of Saving">' +
+    '<label>Emoji</label><input id="edEmoji" placeholder="e.g. 🐖" maxlength="4">' +
+    '<label>Minutes (small text)</label><input id="edMinutes" placeholder="e.g. 2 min read">' +
+    '<label>Big Idea (the one-sentence lesson)</label><textarea id="edEasy" rows="2" placeholder="The Big Idea: …"></textarea>' +
+    '<label>The Rule (the tip)</label><textarea id="edTip" rows="2" placeholder="The Rule: …"></textarea>' +
+    '<label>Sections — one per line: heading | text | optional example</label>' +
+    '<textarea id="edSections" rows="4" placeholder="Starting out | Save a little every week | Example: put 10% of pocket money away' + '\n' + 'Keep going | More text | Example: …"></textarea>' +
+    '<label>Questions — one per line: question | option1 | option2 | option3 | option4 | *correct index (0-3) | why</label>' +
+    '<textarea id="edQuestions" rows="6" placeholder="What is saving? | Spending all | Keeping some for later | Lending it | Burying it | 1 | Saving means keeping money for later' + '\n' + '"></textarea>' +
+    '<div class="login-err" id="edErr"></div>' +
+    '<div class="btn-row"><button class="btn big" id="btnSaveLesson">💾 Save lesson</button><button class="btn big primary" id="btnEditorBack">🏠 Home</button></div>';
+  $('#btnSaveLesson').addEventListener('click', saveLessonFromEditor);
+  $('#btnEditorBack').addEventListener('click', () => { switchView('home'); renderHome(); });
+  $('#edId').addEventListener('input', () => $('#edId').value = $('#edId').value.toLowerCase().replace(/[^a-z0-9_-]/g, ''));
+}
+
+function saveLessonFromEditor() {
+  const err = $('#edErr');
+  err.textContent = '';
+  const id = $('#edId').value.trim();
+  const title = $('#edTitle').value.trim();
+  const emoji = $('#edEmoji').value.trim() || '📘';
+  const minutes = $('#edMinutes').value.trim() || '2 min read';
+  const easy = $('#edEasy').value.trim();
+  const tip = $('#edTip').value.trim();
+  if (!id || !title || !easy || !tip) { err.textContent = 'Fill at least id, title, Big Idea and The Rule.'; return; }
+  const sections = parseLines($('#edSections').value, 3);
+  const questions = parseQuestions($('#edQuestions').value);
+  if (sections.length === 0) { err.textContent = 'Add at least one section line (heading | text | example).'; return; }
+  if (questions.length < 3) { err.textContent = 'Add at least 3 question lines.'; return; }
+  saveLesson({ id, title, emoji, minutes, easy, tip, sections, questions }, err);
+}
+
+function parseLines(text, partsLen) {
+  const out = [];
+  for (const line of String(text).split('\n')) {
+    const parts = line.split('|').map((p) => p.trim());
+    if (parts[0]) {
+      out.push({
+        h: parts[0],
+        b: parts[1] || parts[0],
+        ex: parts[2] ? parts[2] : null
+      });
+    }
+  }
+  return out;
+}
+
+function parseQuestions(text) {
+  const out = [];
+  for (const line of String(text).split('\n')) {
+    const parts = line.split('|').map((p) => p.trim());
+    const a = parseInt(parts[5], 10);
+    if (parts.length >= 6 && parts[0] && parts[5] && !isNaN(a) && a >= 0 && a <= 3) {
+      out.push({ q: parts[0], options: [parts[1], parts[2], parts[3], parts[4]], answer: a, why: parts[6] || '' });
+    }
+  }
+  return out;
+}
+
+async function saveLesson(lesson, err) {
+  const btn = $('#btnSaveLesson');
+  btn.disabled = true;
+  const r = await apiFetch('/api/lessons', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth.token },
+    body: JSON.stringify({ lesson }),
+    timeout: 30000
+  });
+  btn.disabled = false;
+  if (!r.ok) { err.textContent = r.error || 'Could not save the lesson.'; return; }
+  serverLessons = r.data.lessons;
+  err.textContent = '';
+  toast('✅ Lesson "' + lesson.title + '" is now live for everyone!', 'toast-ok');
+  await loadServerLessons();
+  switchView('home');
+  renderHome();
+}
+
 function openLesson(id) {
-  const lesson = LESSONS.find((l) => l.id === id);
+  const lesson = allLessons().find((l) => l.id === id);
   if (!lesson) return;
   session = { lesson, index: -1, mistakes: 0, earned: 0, correct: 0, queue: [], locked: false };
   renderLesson();
@@ -558,5 +728,7 @@ function boot() {
     $('#password').value = '';
     $('#loginErr').textContent = '';
   }));
+  loadConfig();
+  loadServerLessons();
   initAuth();
 }
