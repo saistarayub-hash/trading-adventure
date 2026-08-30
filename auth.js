@@ -19,6 +19,7 @@ function ensureSecret() {
 const DB_FILE = process.env.DB_FILE || path.join(ROOT, 'users.json');
 const SESSION_SECRET = process.env.SESSION_SECRET || ensureSecret();
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+const CREATOR = process.env.CREATOR || 'yubi';
 
 let db = null;
 
@@ -138,6 +139,35 @@ function verifyToken(token) {
   } catch { return null; }
 }
 
+function getRole(username) {
+  return username === CREATOR ? 'creator' : 'member';
+}
+
+function findOrCreateGoogle(profile) {
+  const sub = String(profile.sub || '').trim();
+  if (!sub) return { ok: false, error: 'Google login missing user id.' };
+  for (const u of Object.keys(db.users)) {
+    if (db.users[u] && db.users[u].google === sub) {
+      return { ok: true, user: u, progress: cloneProgress(db.users[u].progress), role: getRole(u) };
+    }
+  }
+  let base = String(profile.email || '').toLowerCase().split('@')[0].toLowerCase();
+  base = base.replace(/[^a-z0-9_.-]/g, '').slice(0, 18);
+  if (!/^[a-z0-9_.-]{3,20}$/.test(base)) base = 'g' + sub.slice(0, 14);
+  let username = base;
+  let i = 1;
+  while (db.users[username]) { username = base.slice(0, 17) + i; i++; }
+  db.users[username] = {
+    google: sub,
+    email: profile.email || '',
+    googleName: profile.name || profile.given_name || '',
+    created: Date.now(),
+    progress: emptyProgress()
+  };
+  saveDb();
+  return { ok: true, user: username, progress: cloneProgress(db.users[username].progress), role: getRole(username) };
+}
+
 function getProgress(username) {
   const rec = db.users[username];
   return rec ? cloneProgress(rec.progress) : null;
@@ -163,11 +193,14 @@ module.exports = {
   getProgress,
   setProgress,
   userCount,
+  getRole,
+  findOrCreateGoogle,
   cleanUsername,
   checkPassword,
   emptyProgress,
   cloneProgress,
   sanitizeProgress,
   DB_FILE,
-  SESSION_SECRET_SET: !!process.env.SESSION_SECRET
+  SESSION_SECRET_SET: !!process.env.SESSION_SECRET,
+  CREATOR
 };
