@@ -385,12 +385,39 @@ async function saveLesson(lesson, err) {
   renderHome();
 }
 
-function openLesson(id) {
-  const lesson = allLessons().find((l) => l.id === id);
+function openLesson(idOrLesson) {
+  const lesson = typeof idOrLesson === 'string' ? allLessons().find((l) => l.id === idOrLesson) : idOrLesson;
   if (!lesson) return;
   session = { lesson, index: -1, mistakes: 0, earned: 0, correct: 0, queue: [], locked: false };
   renderLesson();
   switchView('lesson');
+}
+
+function buildMixedQuiz(n) {
+  const pool = [];
+  for (const l of allLessons()) {
+    for (const q of l.questions) pool.push(q);
+  }
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+  }
+  const picked = pool.slice(0, Math.max(4, n || Math.min(12, pool.length)));
+  return {
+    id: 'surprise',
+    title: 'Surprise Mixed Quiz',
+    emoji: '🎲',
+    minutes: Math.max(2, Math.round(picked.length * 0.8)) + ' min',
+    easy: 'The Big Idea: A little bit of everything — how many can you nail?',
+    sections: [],
+    tip: 'The Rule: Mix it up. Every question sharpens a different money tool.',
+    questions: picked
+  };
+}
+
+function startSurpriseQuiz() {
+  openLesson(buildMixedQuiz(10));
+  startQuiz();
 }
 
 function renderLesson() {
@@ -532,7 +559,7 @@ function next() {
 
 function finishQuiz() {
   const l = session.lesson;
-  const firstTime = !state.done[l.id];
+  const firstTime = !state.done[l.id] && l.id !== 'surprise';
   let bonus = 0;
   let stars = 1;
   if (session.mistakes === 0) stars = 3;
@@ -540,7 +567,7 @@ function finishQuiz() {
   if (firstTime) bonus = SCORES.bonus;
   const total = session.earned + bonus;
   state.score += total;
-  state.done[l.id] = true;
+  if (l.id !== 'surprise') state.done[l.id] = true;
   saveState();
   const lvl = getLevel(state.score);
   $('#scorePill').textContent = '⭐ ' + state.score + ' pts';
@@ -561,12 +588,15 @@ function finishQuiz() {
     '<div class="muted">You are now ' + lvl.level.emoji + ' <b>' + lvl.level.name + '</b>' +
     (lvl.next ? ' · ' + lvl.progress + '% to ' + lvl.next.name : '') + '</div>' +
     '<div class="btn-row">' +
-    '<button class="btn big" id="btnReplay">🔁 Play again</button>' +
+    '<button class="btn big" id="btnReplay">' + (l.id === 'surprise' ? '🎲 Another surprise quiz' : '🔁 Play again') + '</button>' +
     '<button class="btn big primary" id="btnHome">🏠 Home</button>' +
     '</div>' +
     (AI.online ? '<button class="btn ghost" id="btnFoxQ">➕ Ask the Fox for a brand-new question</button>' : '') +
     '</div>';
-  $('#btnReplay').addEventListener('click', () => { openLesson(l.id); startQuiz(); });
+  $('#btnReplay').addEventListener('click', () => {
+    if (l.id === 'surprise') startSurpriseQuiz();
+    else { openLesson(l.id); startQuiz(); }
+  });
   $('#btnHome').addEventListener('click', () => { switchView('home'); renderHome(); });
   const fx = $('#btnFoxQ');
   if (fx) fx.addEventListener('click', () => foxNewQuestion(l));
@@ -721,6 +751,7 @@ function boot() {
     if (m) AI.setModel(m);
   });
   $('#btnAuth').addEventListener('click', submitAuth);
+  $('#btnSurprise').addEventListener('click', startSurpriseQuiz);
   $('#btnGuest').addEventListener('click', guestMode);
   $('#btnSignOut').addEventListener('click', () => signOut('Signed out. See you soon, young trader!'));
   $$('#seg .seg-btn').forEach((b) => b.addEventListener('click', () => {
