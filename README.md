@@ -102,6 +102,28 @@ quiz questions. You can plug in **any of these** inside the app: open the **"Ask
 - When no brain is online, the app still works fully offline with the built-in lessons and questions.
   The AI features (stories, chat, fresh questions) just light up once a brain wakes up.
 
+## 🤖 Bonus: the Robot Lab (`bot/`)
+
+A working, honest implementation of the *time-window range-scalper* class of forex robot — the family
+Forex Fury belongs to — built from a teardown of that product rather than a copy of it.
+
+```bash
+node bot/test.js                      # 45 tests: safety rails, arithmetic, live/backtest parity
+node bot/backtest.js --all            # every preset side by side
+node bot/backtest.js --preset fury-legacy-5-29   # watch the engine REFUSE a bad config, and why
+```
+
+It ships as a JS engine + backtester (runs today) and an MT5 Expert Advisor (`bot/mql5/FuryPlus.mq5`,
+needs MetaEditor). The interesting parts are the **safety rails**: it refuses presets that need an
+impossible win rate to break even, refuses positions with no stop or no deadline, refuses lookahead in
+the range definition, and refuses martingale/grid outright. Research notes in
+[`research/forex-fury-teardown.md`](research/forex-fury-teardown.md); rationale in [`bot/README.md`](bot/README.md).
+
+This is also a teaching opportunity the app was always about: **a 93% win rate is not a good result if
+the average loss is six times the average win.** That single sentence is most of what separates the
+honest version of this category from the con version. It is still pretend-computers-for-learners; it is
+not financial advice, and the numbers it prints are not a promise.
+
 ## How it works
 
 - **Lessons** — 8 short lessons: Money 101, Stocks & Shares, The Stock Market, Bull vs Bear,

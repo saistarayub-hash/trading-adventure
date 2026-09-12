@@ -1,0 +1,64 @@
+{
+  "name": "London Open BALANCED (16/16, one trade a day)",
+  "symbol": "GBPUSD",
+  "timeframe": "M15",
+  "notes": "Modelled on the geometry the independently reviewed 2026 accounts reportedly run: 16-pip TP against a 16-pip SL, one trade in the first two hours of London, symmetric risk, no grid, no recovery. This is the only configuration in this family where the advertised win rate and the actual risk line up (break-even win rate ~53%, not ~90%). Reference range is the Asian session, and it is deliberately closed at 07:00 when the window opens, because a range measured with the trading hours inside it is lookahead, not a signal.",
+  "session": {
+    "windows": [
+      {
+        "start": "07:00",
+        "end": "09:00"
+      }
+    ],
+    "days": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ],
+    "maxSetsPerDay": 1
+  },
+  "filters": {
+    "maxSpreadPoints": 10,
+    "maxAtrZ": null,
+    "adxMax": null,
+    "minAtrPips": 0.8,
+    "rangeSource": "session",
+    "sessionRange": {
+      "start": "00:00",
+      "end": "07:00"
+    },
+    "minRangeBars": 16
+  },
+  "entries": {
+    "method": "open_breakout",
+    "breakoutAtrMult": null,
+    "maPeriod": 20,
+    "requireMomentum": true,
+    "minBreakoutAtrZ": 0.0
+  },
+  "exits": {
+    "tpPips": 16,
+    "slPips": 16,
+    "slBeyondRangePips": 0,
+    "slMaxPips": 16,
+    "breakEvenTriggerPips": 10,
+    "breakEvenOffsetPips": 2,
+    "trailStartPips": 12,
+    "trailStepPips": 3,
+    "trailPips": 6,
+    "hardTimeStopBars": 16,
+    "closeAtWindowEnd": false
+  },
+  "risk": {
+    "sizingMode": "pctEquity",
+    "riskPct": 0.75,
+    "dailyLossCapPct": 2,
+    "maxConsecutiveLosses": 4,
+    "equityStopPct": 9,
+    "maxBreakEvenWinRate": 0.72
+  }
+}

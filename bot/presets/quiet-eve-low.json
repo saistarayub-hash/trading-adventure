@@ -1,0 +1,80 @@
+{
+  "name": "Quiet Eve LOW (fade the compressed range, last hour before rollover)",
+  "symbol": "EURUSD",
+  "timeframe": "M15",
+  "notes": "Flagship. Same family as the product we studied (one quiet hour, fade the edge of a compressed range, small target) with the fixes that matter: real stop on every position, hard lifetime on every position, level/price-action semantics that match what the filters claim, and a spread gate tied to the broker in use. adxMax is calibrated against THIS engine's trailing-window ADX (not Wilder's), measured on the generator: p50 ~44, p25 ~28 \u2014 so 34 keeps the calmest third of in-window bars, matching the ~20% rejection the range gate applies. Change the ADX implementation and this number must be re-derived, or the preset quietly stops meaning what it says. Two self-consistency rules took a while to land: an 'only range trading' filter cannot admit ADX 30, and a 'low volatility' filter cannot admit above-average ATR. GEOMETRY, and why it moved twice: (1) a 20-bar (5h) lifetime from a 20:45 entry guaranteed crossing the 22:00 bank rollover, so the spread kill-switch fired on essentially every trade and the TP/SL could never be reached. (2) Fixing that by flattening at window end exposed a worse incoherence \u2014 a 9-pip target inside a 60-minute window on a bar-ATR-1.2p pair is not a plan, it is a wish: most trades were dying on the clock, so the exit distribution was 'whatever the last bar looked like', not TP or SL. The window is now two hours ending at 21:00 GMT (hour 19-20 carry a 1.4x/1.6x spread multiple, 21:00 jumps to 2.4x and 22:00 to 7.0x, so ending BEFORE the step-up is the cheap part of the evening), the target is 7p, and the stop is 10p widened to at most 12p outside the range \u2014 which is the largest geometry the break-even rail still permits at 1.3p of cost (70.0% against a 72% ceiling). slMaxPips is load-bearing, not cosmetic: the rail prices the widened stop, so removing the cap makes the preset unbounded and it is refused outright.",
+  "session": {
+    "windows": [
+      {
+        "start": "19:00",
+        "end": "21:00"
+      }
+    ],
+    "days": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ],
+    "maxSetsPerDay": 1
+  },
+  "filters": {
+    "rangeSource": "rolling",
+    "rangeLookbackBars": 8,
+    "minRangeBars": 8,
+    "maxSpreadPoints": 8,
+    "spreadSpikeMult": 2,
+    "minAtrPips": 1.2,
+    "volRegimeLookback": 400,
+    "maxAtrZ": -0.3,
+    "adxMax": 34,
+    "maxRangePips": 12,
+    "maxRangeAtrMult": 4,
+    "newsFilter": {
+      "enabled": true,
+      "currencies": [
+        "USD",
+        "EUR"
+      ],
+      "importance": "high",
+      "minutesBefore": 30,
+      "minutesAfter": 30
+    }
+  },
+  "entries": {
+    "method": "range_reversion",
+    "trigger": "rejection",
+    "requireFirstTouch": true,
+    "bandBufferPips": 0.3,
+    "requireMomentum": false,
+    "rejectionPips": 0.8
+  },
+  "exits": {
+    "tpPips": 7,
+    "slPips": 10,
+    "slBeyondRangePips": 2,
+    "slMaxPips": 12,
+    "breakEvenTriggerPips": 0,
+    "breakEvenOffsetPips": 0.6,
+    "trailStartPips": 0,
+    "hardTimeStopBars": 8,
+    "closeAtWindowEnd": true
+  },
+  "risk": {
+    "sizingMode": "pctEquity",
+    "riskPct": 0.5,
+    "dailyLossCapPct": 1.5,
+    "maxConsecutiveLosses": 3,
+    "equityStopPct": 8,
+    "maxOrders": 1,
+    "maxBreakEvenWinRate": 0.72
+  },
+  "costs": {
+    "spreadPips": 0.35,
+    "commissionPips": 0.25,
+    "slippagePips": 0.4
+  }
+}

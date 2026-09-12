@@ -1,0 +1,6 @@
+node_modules/
+bot/out/
+*.log
+users.json
+lessons.json
+.DS_Store

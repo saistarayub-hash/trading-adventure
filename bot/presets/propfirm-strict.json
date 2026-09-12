@@ -1,0 +1,81 @@
+{
+  "name": "Prop Firm STRICT (lives inside 5% daily / 10% max rules)",
+  "symbol": "EURUSD",
+  "timeframe": "M15",
+  "notes": "Funded-account rules are the only sane reason to tune a scalper this hard: 5% daily loss limit, 10% max drawdown, minimum trading days. Sized so a full loss day is ~1.2%, halted after 2 losers, everything flat before the window closes so nothing can gap through a limit. Deliberately slow. Also: slMaxPips 14 was refused by the break-even rail \u2014 the engine widens the stop to sit outside the range, and TP 6 against a 14p stop needs 75.3% even though the preset advertised 9. Capping the widening at 10p is the honest version of the same idea (69.4% needed, ceiling 70%).",
+  "session": {
+    "windows": [
+      {
+        "start": "07:00",
+        "end": "08:00"
+      }
+    ],
+    "days": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ],
+    "maxSetsPerDay": 1
+  },
+  "filters": {
+    "maxSpreadPoints": 8,
+    "maxAtrZ": -0.2,
+    "adxMax": 20,
+    "maxRangePips": 30,
+    "minAtrPips": 0.7,
+    "newsFilter": {
+      "enabled": true,
+      "currencies": [
+        "USD",
+        "EUR",
+        "GBP"
+      ],
+      "importance": "high",
+      "minutesBefore": 45,
+      "minutesAfter": 45
+    },
+    "rangeSource": "session",
+    "sessionRange": {
+      "start": "00:00",
+      "end": "07:00"
+    },
+    "minRangeBars": 16,
+    "maxRangeAtrMult": 6
+  },
+  "entries": {
+    "method": "range_reversion",
+    "bandBufferPips": 1,
+    "rejectionPips": null,
+    "trigger": "level_cross",
+    "requireMomentum": false
+  },
+  "exits": {
+    "tpPips": 6,
+    "slPips": 9,
+    "slBeyondRangePips": 2,
+    "slMaxPips": 10,
+    "breakEvenTriggerPips": 7,
+    "breakEvenOffsetPips": 1,
+    "trailStartPips": 0,
+    "hardTimeStopBars": 12,
+    "closeAtWindowEnd": true
+  },
+  "risk": {
+    "sizingMode": "pctEquity",
+    "riskPct": 0.35,
+    "maxLots": 0.5,
+    "dailyLossCapPct": 1.2,
+    "maxConsecutiveLosses": 2,
+    "equityStopPct": 6,
+    "maxBreakEvenWinRate": 0.7
+  },
+  "costs": {
+    "spreadPips": 0.4,
+    "commissionPips": 0.35,
+    "slippagePips": 0.3
+  }
+}

@@ -5,7 +5,13 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node test.js"
+    "test": "node test.js && node bot/test.js",
+    "bot:test": "node bot/test.js",
+    "bot:backtest": "node bot/backtest.js",
+    "bot:calibrate": "node bot/tools/calibrate.js",
+    "bot:sets": "node bot/tools/export-set.js",
+    "bot:marks": "node bot/tools/mark-chart.js",
+    "bot:replay": "node bot/live.js --replay --strict"
   },
   "dependencies": {},
   "license": "MIT"

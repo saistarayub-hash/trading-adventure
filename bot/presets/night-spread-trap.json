@@ -1,0 +1,48 @@
+{
+  "name": "NIGHT SPREAD TRAP (why vendor set files do not transfer brokers)",
+  "symbol": "EURUSD",
+  "timeframe": "M15",
+  "notes": "Deliberately a dead preset, and the most instructive one here. Same strategy, same geometry, but the window sits on the 22:00 bank rollover with the documented MaxSpread default of 5 points. Spreads there routinely run 0.8-2.5 pips, so the spread gate refuses every bar and the bot never trades \u2014 or, on a broker with loose spread reporting, it trades right into the widest, slipperiest minute of the day and the 98% tester win rate arrives live as 88%. Either way the ONLY thing that changed versus quiet-eve-low is the clock and the broker. That is what 'works with any broker' means. Note: with slBeyondRangePips left on, the break-even rail refuses this shape before the spread gate is even consulted (TP 14 against a stop widened to 34p needs 74.1%) \u2014 which is the right outcome for that geometry but the wrong lesson here, because this fixture exists to show that a broker's spread alone can zero a strategy. The widening is off so the spread does the refusing.",
+  "session": {
+    "windows": [
+      {
+        "start": "21:00",
+        "end": "22:00"
+      }
+    ],
+    "maxSetsPerDay": 1
+  },
+  "filters": {
+    "maxSpreadPoints": 5,
+    "maxAtrZ": -0.2,
+    "adxMax": 22,
+    "minAtrPips": 1.0,
+    "rangeSource": "rolling",
+    "rangeLookbackBars": 8,
+    "maxRangePips": 14
+  },
+  "entries": {
+    "method": "range_reversion"
+  },
+  "exits": {
+    "tpPips": 14,
+    "slPips": 18,
+    "slMaxPips": 34,
+    "breakEvenTriggerPips": 9,
+    "trailStartPips": 0,
+    "hardTimeStopBars": 12,
+    "closeAtWindowEnd": true,
+    "slBeyondRangePips": 0
+  },
+  "risk": {
+    "riskPct": 0.5,
+    "dailyLossCapPct": 1.5,
+    "maxConsecutiveLosses": 3
+  },
+  "costs": {
+    "spreadPips": 0.45,
+    "commissionPips": 0.3,
+    "slippagePips": 0.8,
+    "rolloverSpreadMult": 7
+  }
+}

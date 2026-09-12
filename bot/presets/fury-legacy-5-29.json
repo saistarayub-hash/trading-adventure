@@ -1,0 +1,37 @@
+{
+  "name": "LEGACY 5/29 \u2014 REJECTED BY DESIGN (regression fixture)",
+  "symbol": "EURUSD",
+  "timeframe": "M15",
+  "notes": "The historical shape reported by third parties on this product family: 5-pip TP against a 29-pip SL (or none at all). It needs ~87% win rate before costs just to break even, which is exactly why users who honoured the stop reported blown accounts while the marketing showed a 93% win rate. The engine refuses to run it. This file exists so the refusal stays tested.",
+  "session": {
+    "windows": [
+      {
+        "start": "21:00",
+        "end": "22:00"
+      }
+    ]
+  },
+  "filters": {
+    "maxSpreadPoints": 12,
+    "maxAtrZ": null,
+    "adxMax": null,
+    "minAtrPips": 0,
+    "rangeSource": "rolling",
+    "rangeLookbackBars": 8,
+    "maxRangePips": null
+  },
+  "exits": {
+    "tpPips": 5,
+    "slPips": 29,
+    "slBeyondRangePips": 0,
+    "slMaxPips": 29,
+    "breakEvenTriggerPips": 0,
+    "trailStartPips": 0,
+    "hardTimeStopBars": 24,
+    "closeAtWindowEnd": false,
+    "maxRangeAtrMult": null
+  },
+  "risk": {
+    "maxOrders": 1
+  }
+}
