@@ -1,0 +1,81 @@
+# Builds a real, installable Android APK for the Trading Companion.
+#
+# Why here and not on your laptop: the APK needs the Android SDK + Gradle.
+# GitHub's ubuntu runners ship both, so this workflow exports the web app,
+# wraps it with Capacitor and builds mobile/android with Gradle.
+#
+# Trigger it from the GitHub UI (Actions → "Build Android APK" → Run workflow)
+# or from a terminal:
+#
+#   gh workflow run android-apk.yml --ref <your-branch>
+#   gh run watch                       # wait for it
+#   gh run download <run-id> --name trading-companion-apk
+#
+# The output is a debug-signed APK you can sideload (copy to the phone, tap it,
+# allow "install unknown apps"). For a store build, add your keystore and
+# switch assembleDebug → assembleRelease + signingConfig.
+
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up JDK 17 (required by the Android Gradle plugin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Export the companion web app to mobile/www
+        run: node tools/make-mobile.js
+
+      - name: Install the Capacitor tooling
+        working-directory: mobile
+        run: npm install --no-package-lock --no-audit --no-fund
+
+      - name: Add and sync the Android platform
+        working-directory: mobile
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Show what the SDK provides (helps debug version drift)
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms" 2>/dev/null || true
+          ls "$ANDROID_HOME/build-tools" 2>/dev/null || true
+
+      - name: Build the debug APK
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Report the artifact
+        working-directory: mobile/android/app/build/outputs/apk/debug
+        run: ls -la && du -h app-debug.apk
+
+      - name: Upload the APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: trading-companion-apk
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30

@@ -27,3 +27,6 @@ companion/release/
 # os junk
 .DS_Store
 Thumbs.db
+
+# downloaded APK artifacts
+apk/
