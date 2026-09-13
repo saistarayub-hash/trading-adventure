@@ -763,3 +763,19 @@ function boot() {
   loadServerLessons();
   initAuth();
 }
+/* ── Companion link ───────────────────────────────────────────────────────
+   The Trading Companion needs the little server (it stores your knowledge base
+   and proxies nothing else). If this page was opened straight off the disk as a
+   file://, the link would go nowhere — so hide it and say why in the tooltip. */
+(function () {
+  const el = document.getElementById('companionLink');
+  if (!el) return;
+  if (window.location.protocol === 'file:') {
+    el.style.display = 'none';
+  } else {
+    el.setAttribute('href', 'companion');
+    el.addEventListener('mouseenter', function () {
+      el.title = 'Trading Companion — feed it videos and links, then let it watch your charts and coach you live';
+    });
+  }
+})();

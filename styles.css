@@ -51,6 +51,11 @@ main { max-width: 1080px; margin: 0 auto; padding: 18px; }
 
 .pill-score { border-color: #ffd76a; background: #fff8e1; }
 .pill-brain { cursor: pointer; font-family: inherit; }
+.pill-companion {
+  text-decoration: none; cursor: pointer; font-family: inherit;
+  border-color: #7dd3fc; background: #eff9ff; color: #0369a1;
+}
+.pill-companion:hover { border-color: #0ea5e9; background: #e0f2fe; }
 .pill-brain.on { border-color: var(--green); background: #eafaf0; color: #15803d; }
 .pill-brain.off { border-color: var(--red); background: #fef1f1; color: #b91c1c; }
 
