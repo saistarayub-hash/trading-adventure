@@ -19,6 +19,9 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'apk-*'      # git tag apk-v1.0.0 && git push origin apk-v1.0.0
 
 concurrency:
   group: android-apk
