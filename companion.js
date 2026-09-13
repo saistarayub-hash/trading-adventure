@@ -76,9 +76,14 @@ const Backend = (function () {
 
   async function api(path, opts) {
     const o = opts || {};
-    const res = await fetch('/api/companion' + path, {
+    // Remote mode: a phone (PWA or APK) can talk to the companion server over
+    // the internet when you give it the URL + the token from Settings.
+    const base = (Conn.url || '').replace(/\/+$/, '');
+    const headers = { 'Content-Type': 'application/json' };
+    if (Conn.token) headers['X-Companion-Token'] = Conn.token;
+    const res = await fetch(base + '/api/companion' + path, {
       method: o.method || 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: o.body ? JSON.stringify(o.body) : undefined
     });
     let j = null;
@@ -170,8 +175,9 @@ const Backend = (function () {
       if (ipc) return ipc.invoke('wipe');
       return api('/wipe', { method: 'POST' });
     },
-    /* ---- screen capture ---- */
+    /* ---- screen capture (or the camera, on phones) ---- */
     async capture(opts) {
+      if (captureSource() === 'camera') return CameraCapture.frame(opts || {});
       if (ipc) return ipc.invoke('capture', opts || {});
       return BrowserCapture.frame(opts || {});
     },
@@ -206,7 +212,27 @@ const S = {
   coach: null,
   doneModules: [],
   captureStream: null,  // browser getDisplayMedia
+  cameraStream: null,   // phone/webcam capture (point it at your monitor)
+  cameraVideo: null,
   captureVideo: null
+};
+
+/* Where a phone (PWA or APK) finds its companion server. Deliberately NOT part
+ * of the shared settings object: it is per-device, and the token must never be
+ * uploaded to the server it authenticates against. Kept in localStorage only. */
+const Conn = {
+  url: '',
+  token: '',
+  load() {
+    try {
+      const j = JSON.parse(localStorage.getItem('companionConn') || 'null');
+      if (j) { this.url = String(j.url || ''); this.token = String(j.token || ''); }
+    } catch (e) {}
+    return this;
+  },
+  save() {
+    try { localStorage.setItem('companionConn', JSON.stringify({ url: this.url, token: this.token })); } catch (e) {}
+  }
 };
 
 const DEFAULT_SETTINGS = {
@@ -225,7 +251,9 @@ const DEFAULT_SETTINGS = {
   opacity: 100,
   width: 400,
   excludeSelf: true,
-  language: 'English'
+  language: 'English',
+  serverUrl: '',
+  serverToken: ''
 };
 
 /* ══════════════════════════════ screen capture ══════════════════════════════ */
@@ -372,6 +400,50 @@ const BrowserCapture = {
   }
 };
 
+/* Camera capture: point the phone (or a webcam) AT your monitor. This is what
+ * makes the companion usable on Android, where an overlay over other apps is
+ * impossible — the rear camera becomes the "screen share". Same signature,
+ * same offline reader, same coach: nothing downstream changes. */
+const CameraCapture = {
+  async ensure() {
+    if (S.cameraStream && S.cameraStream.active) return true;
+    const md = navigator.mediaDevices;
+    if (!md || !md.getUserMedia) {
+      throw new Error('This device has no camera API the browser can use.');
+    }
+    const stream = await md.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    S.cameraStream = stream;
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.srcObject = stream;
+    await v.play();
+    S.cameraVideo = v;
+    stream.getVideoTracks()[0].addEventListener('ended', () => { stopWatching('Camera was disconnected.'); });
+    return true;
+  },
+  async frame() {
+    await this.ensure();
+    const v = S.cameraVideo;
+    if (!v || !v.videoWidth) throw new Error('The camera is not producing frames yet.');
+    const c = canvasOf(v.videoWidth, v.videoHeight);
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    return { ok: true, dataUrl: c.toDataURL('image/jpeg', 0.85), source: 'camera' };
+  },
+  stop() {
+    if (S.cameraStream) { S.cameraStream.getTracks().forEach((t) => t.stop()); }
+    S.cameraStream = null; S.cameraVideo = null;
+  },
+  available() {
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  }
+};
+
+function captureSource() {
+  return (S.settings && S.settings.capture) || 'screen';
+}
+
 /* ══════════════════════════════ coach wiring ══════════════════════════════ */
 
 function coachAI() {
@@ -460,7 +532,9 @@ async function analyseOnce(opts) {
     setLight('#lightWatch', 'err', msg);
     setStatus('capture error: ' + msg);
     if (/permission|denied|not allowed|Permission/i.test(msg)) {
-      toast('Screen capture was blocked. Allow it and press Start again.', 'err');
+      toast(captureSource() === 'camera'
+        ? 'Camera access was blocked. Allow the camera for this site, then press Start again.'
+        : 'Screen capture was blocked. Allow it and press Start again.', 'err');
       stopWatching('Permission denied.');
     } else if (!o.silent) {
       toast(msg, 'err');
@@ -501,6 +575,7 @@ function stopWatching(why) {
   S.watching = false;
   clearTimeout(S.timer);
   BrowserCapture.stop();
+  CameraCapture.stop();
   $('#btnWatch').textContent = '▶ Start watching';
   $('#btnWatch').classList.add('primary');
   $('#watchState').textContent = 'not watching';
@@ -1375,7 +1450,10 @@ function bindSettings() {
   const save = debounce(async (patch) => {
     S.settings = Object.assign({}, S.settings, patch);
     if (S.coach) S.coach.configure(S.settings);
-    try { await Backend.saveSettings(S.settings); } catch {}
+    // Connection info is device-local; never upload it with the settings.
+    const wire = Object.assign({}, S.settings);
+    delete wire.serverUrl; delete wire.serverToken;
+    try { await Backend.saveSettings(wire); } catch {}
     if (Backend.isElectron) Backend.window({
       onTop: S.settings.onTop !== false, dock: S.settings.dock,
       opacity: S.settings.opacity, width: S.settings.width
@@ -1384,7 +1462,35 @@ function bindSettings() {
 
   $('#selInterval').addEventListener('change', (e) => save({ intervalMs: Number(e.target.value) }));
   $('#selSensitivity').addEventListener('change', (e) => save({ sensitivity: e.target.value }));
-  $('#setCapture').addEventListener('change', (e) => { BrowserCapture.stop(); save({ capture: e.target.value }); });
+  $('#setCapture').addEventListener('change', (e) => {
+    BrowserCapture.stop(); CameraCapture.stop();
+    save({ capture: e.target.value });
+    if (e.target.value === 'camera') {
+      toast('Point the camera at your chart and press Start watching. Hold the phone steady.', 'ok');
+    }
+  });
+  $('#btnInstallApp').addEventListener('click', installApp);
+  $('#setServerUrl').value = Conn.url;
+  $('#setServerToken').value = Conn.token;
+  $('#setServerUrl').addEventListener('change', (e) => {
+    Conn.url = e.target.value.trim();
+    Conn.save();
+    loadState().catch(() => {});
+    toast(Conn.url ? 'Connected to ' + Conn.url : 'Back to the server this page came from.', 'ok');
+  });
+  $('#setServerToken').addEventListener('change', (e) => {
+    Conn.token = e.target.value.trim();
+    Conn.save();
+    loadState().catch(() => {});
+  });
+  $('#btnTestServer').addEventListener('click', async () => {
+    try {
+      const st = await Backend.state();
+      toast('Connected: ' + st.sources.length + ' sources, ' + st.stats.chunks + ' pieces.', 'ok');
+    } catch (e) {
+      toast('Could not reach it: ' + e.message, 'err');
+    }
+  });
   $('#setQuality').addEventListener('change', (e) => save({ quality: Number(e.target.value) }));
   $('#setMaxW').addEventListener('change', (e) => save({ maxW: Number(e.target.value) }));
   $('#setPauseHidden').addEventListener('change', (e) => save({ pauseHidden: e.target.checked }));
@@ -1619,9 +1725,70 @@ function bindChrome() {
   });
 }
 
+/* ── installable app (Android / iOS / desktop Chrome) ─────────────────────── */
+let deferredInstall = null;
+
+function registerServiceWorker() {
+  if (Backend.isElectron) return;
+  if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  // Default scope ('/') so the cached shell covers /engine and /ai.js too;
+  // sw.js deliberately passes every non-companion request straight through.
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+function installApp() {
+  if (deferredInstall) {
+    deferredInstall.prompt();
+    deferredInstall.userChoice.then((r) => {
+      if (r && r.outcome === 'accepted') toast('Installed. Look for the Companion on your home screen.', 'ok');
+      deferredInstall = null;
+      $('#btnInstallApp').classList.add('hidden');
+    });
+    return;
+  }
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  toast(ios
+    ? 'On iPhone/iPad: Share → "Add to Home Screen".'
+    : 'On Android: browser menu → "Add to Home screen" / "Install app".', 'warn');
+}
+
+function bindInstallPrompt() {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstall = e;
+    $('#btnInstallApp').classList.remove('hidden');
+    $('#installHint').textContent = 'One tap: adds the Companion to your home screen as a full-screen app.';
+  });
+  window.addEventListener('appinstalled', () => {
+    deferredInstall = null;
+    $('#btnInstallApp').classList.add('hidden');
+    toast('Installed as an app. 🎉', 'ok');
+  });
+}
+
+function applyManifestShortcut() {
+  const q = new URLSearchParams(location.search);
+  const view = q.get('view');
+  if (view && ['coach', 'feed', 'library', 'learn', 'journal', 'settings'].indexOf(view) >= 0) switchView(view);
+  if (q.get('act') === 'look') setTimeout(() => { analyseOnce(); }, 600);
+}
+
 async function boot() {
   document.body.dataset.shell = Backend.isElectron ? 'electron' : 'browser';
   if (!Backend.isElectron) $('#btnClose').title = 'Stop watching (browser mode)';
+
+  Conn.load();
+  registerServiceWorker();
+  bindInstallPrompt();
+
+  // Phones cannot share the screen but they do have a camera: default to it.
+  if (!Backend.isElectron && !S.settings.capture) {
+    const md = navigator.mediaDevices || {};
+    if (!md.getDisplayMedia && md.getUserMedia) {
+      S.settings.capture = 'camera';
+      $('#setCapture').value = 'camera';
+    }
+  }
 
   makeCoach();
   bindChrome();
@@ -1636,13 +1803,17 @@ async function boot() {
   if (Backend.fileOnly) {
     toast('Opened as a plain file — run "node server.js" or the desktop app to save what you feed me.', 'warn');
   } else if (!Backend.isElectron) {
-    toast('Browser mode: screen watching uses the browser share prompt. For a true always-on-top side panel, run the desktop app.', 'warn');
+    const md = navigator.mediaDevices || {};
+    toast(md.getDisplayMedia
+      ? 'Browser mode: screen watching uses the browser share prompt. For a true always-on-top side panel, run the desktop app.'
+      : 'Phone mode: use 📷 Camera as the capture source and point it at your chart. For the floating side panel, run the desktop app.', 'warn');
   }
 
+  applyManifestShortcut();
   setStatus('ready · ' + (Backend.isElectron ? 'desktop shell' : 'browser shell'));
 }
 
 if (typeof window !== 'undefined') {
   window.addEventListener('DOMContentLoaded', boot);
-  window.CompanionApp = { S, Backend, analyseOnce, startWatching, stopWatching, switchView, setBubble, openModule, openQuiz };
+  window.CompanionApp = { S, Backend, Conn, analyseOnce, startWatching, stopWatching, switchView, setBubble, openModule, openQuiz, CameraCapture, installApp };
 }

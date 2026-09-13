@@ -9,6 +9,12 @@ lessons.json
 knowledge.json
 *.log
 
+# mobile export + generated native projects (Capacitor)
+mobile/www/
+mobile/android/
+mobile/ios/
+mobile/node_modules/
+
 # installer output (electron-builder)
 companion/release/
 

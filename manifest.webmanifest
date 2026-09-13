@@ -1,0 +1,57 @@
+{
+  "name": "Trading Companion — Professor Fox",
+  "short_name": "Companion",
+  "description": "Feed it videos and links, and it coaches you live: what it sees on your chart, the rule that applies, the risk, and one thing to learn.",
+  "id": "/companion",
+  "start_url": "/companion",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0b0f16",
+  "theme_color": "#0b0f16",
+  "categories": ["education", "finance"],
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/companion/packaging/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/companion/packaging/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/companion/packaging/pwa-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/companion/packaging/pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Look at my screen",
+      "short_name": "Look",
+      "description": "Analyse the current screen right now",
+      "url": "/companion?act=look",
+      "icons": [{ "src": "/companion/packaging/pwa-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Feed the companion",
+      "short_name": "Feed",
+      "description": "Add a video, link or notes",
+      "url": "/companion?view=feed",
+      "icons": [{ "src": "/companion/packaging/pwa-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -80,6 +80,43 @@ liquidity) so search, citations and coaching have something to quote before you 
 
 ---
 
+## 1b. Android / iPhone
+
+There is no Electron on a phone, and Android will not let one app float over your banking app anyway —
+so the companion installs as a **full-screen app (PWA)** and gets a superpower instead: **your camera
+becomes the screen share**.
+
+**Install (30 seconds):**
+
+1. Run the server somewhere your phone can reach: same Wi-Fi (`http://192.168.x.x:8081`) or a tunnel /
+   Render deploy for away-from-home (see the main README's *Hosting* section).
+2. On the phone, open `http://…:8081/companion` in Chrome (Android) or Safari (iOS).
+3. Android: the **📲 Install as an app** button appears in Settings (or browser menu → *Add to Home
+   screen*). iOS: *Share → Add to Home Screen*. You get a home-screen icon, full-screen window, offline
+   shell and home-screen shortcuts ("Look", "Feed").
+4. First launch: Settings → **Companion server** — enter the URL (and the server token if you are not on
+   your LAN; set `COMPANION_TOKEN=…` when starting the server). The token is stored **on the phone only**.
+
+**Coach through the camera:** Settings → Screen watching → capture source **📷 Camera**, prop the phone
+up, point it at your monitor, press **▶ Start watching**. Every interval the frame goes through the exact
+same pipeline as a desktop screenshot: offline pixel reader → your playbook citations → coach card.
+(On a phone this is the default source, because phones have no screen-share API.)
+
+**Want a real .apk instead?** The repo ships a Capacitor shell:
+
+```bash
+node tools/make-mobile.js        # exports the UI to mobile/www (verified self-contained)
+cd mobile && npm install
+npx cap add android && npx cap sync
+npx cap open android             # Android Studio → Run / Build APK
+```
+
+The APK is the same web app in a WebView; enter your server URL once in Settings. Building the APK needs
+the Android SDK on your machine (Android Studio installs it). `mobile/android/`, `mobile/www/` are
+gitignored — they are generated, not source.
+
+---
+
 ## 2. Your first 10 minutes
 
 1. **Feed** tab → paste a YouTube link (a trading lesson you like) → **📥 Learn these**.
@@ -178,6 +215,7 @@ provider — never through the server that holds your knowledge base.
 | **Anthropic** | Paid | ✅ | Claude haiku/sonnet |
 | **OpenRouter** | Pay-as-you-go | ✅ | One key, many models |
 | **Groq** | Free tier | ✅ | Very fast; Llama 4 Scout |
+| **Google Gemini** on a phone | Free tier | ✅ | The PWA talks straight to the provider from the phone, same as desktop. |
 | **Ollama** | Free, local | ✅ with a vision model | `ollama pull llama3.2-vision` (or `llava`). Nothing leaves your PC. |
 | **LM Studio** | Free, local | ✅ with a vision model | Local server on `http://localhost:1234` |
 

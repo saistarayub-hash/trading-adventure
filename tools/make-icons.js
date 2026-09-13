@@ -57,11 +57,16 @@ function sdRect(px, py, cx, cy, hw, hh) {
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
-/* Render one icon at N×N, returning raw RGBA. */
-function render(N) {
+/* Render one icon at N×N, returning raw RGBA.
+ * opts.maskable: full-bleed square (Android adaptive icons crop a circle or a
+ * squircle out of the middle ~80%), so no rounded corners, no transparency,
+ * and the candle pulled into the safe zone. */
+function render(N, opts) {
+  const maskable = !!(opts && opts.maskable);
   const px = new Float64Array(N * N * 4);
   const a = ART;
-  const r = a.radius * N;
+  const r = maskable ? 0 : a.radius * N;
+  const SAFE = 0.62;   // maskable safe zone: art occupies the middle 62%
   for (let y = 0; y < N; y++) {
     const t = N === 1 ? 0 : y / (N - 1);
     const bgR = a.topColor[0] + (a.bottomColor[0] - a.topColor[0]) * t;
@@ -73,10 +78,15 @@ function render(N) {
       const tile = clamp01(0.5 - dTile);
       if (tile <= 0) continue;
 
-      // Candle: wick then body, unioned.
-      const wk = a.wick;
+      // Candle: wick then body, unioned (scaled into the safe zone if maskable).
+      const fit = (v) => 0.5 + (v - 0.5) * SAFE;
+      const wk = maskable
+        ? { cx: fit(a.wick.cx), y0: fit(a.wick.y0), y1: fit(a.wick.y1), w: a.wick.w * SAFE }
+        : a.wick;
+      const bd = maskable
+        ? { cx: fit(a.body.cx), y0: fit(a.body.y0), y1: fit(a.body.y1), w: a.body.w * SAFE }
+        : a.body;
       const dWick = sdRect(x + 0.5, y + 0.5, wk.cx * N, (wk.y0 + wk.y1) / 2 * N, (wk.w * N) / 2, ((wk.y1 - wk.y0) * N) / 2);
-      const bd = a.body;
       const dBody = sdRect(x + 0.5, y + 0.5, bd.cx * N, (bd.y0 + bd.y1) / 2 * N, (bd.w * N) / 2, ((bd.y1 - bd.y0) * N) / 2);
       const candle = clamp01(0.5 - Math.min(dWick, dBody));
 
@@ -231,6 +241,16 @@ function buildAll() {
   fs.writeFileSync(path.join(BUILD, 'icon.icns'), icns);
   written.push(path.join(BUILD, 'icon.icns'));
 
+  // PWA / Android home-screen icons: normal + maskable (adaptive icon).
+  for (const n of [192, 512]) {
+    const p = path.join(BUILD, 'pwa-' + n + '.png');
+    fs.writeFileSync(p, pngs.get(n) || encodePng(n, render(n)));
+    written.push(p);
+    const m = path.join(BUILD, 'pwa-maskable-' + n + '.png');
+    fs.writeFileSync(m, encodePng(n, render(n, { maskable: true })));
+    written.push(m);
+  }
+
   return written;
 }
 
@@ -324,6 +344,23 @@ function verify() {
 
   const linux = readPng(fs.readFileSync(path.join(BUILD, 'icon.png')));
   check('linux icon.png is 512²', linux.w === 512 && linux.h === 512, linux.w + 'x' + linux.h);
+
+  // PWA icons: right sizes, and the maskable one must be fully opaque
+  // everywhere (Android crops it — transparent edges show as holes).
+  for (const n of [192, 512]) {
+    const any = readPng(fs.readFileSync(path.join(BUILD, 'pwa-' + n + '.png')));
+    check('pwa-' + n + '.png is ' + n + '²', any.w === n && any.h === n, any.w + 'x' + any.h);
+    check('pwa-' + n + '.png keeps transparent corners', any.px(0, 0)[3] === 0);
+    const mk = readPng(fs.readFileSync(path.join(BUILD, 'pwa-maskable-' + n + '.png')));
+    const corners = [mk.px(0, 0), mk.px(n - 1, 0), mk.px(0, n - 1), mk.px(n - 1, n - 1)];
+    check('pwa-maskable-' + n + '.png is fully opaque (adaptive-icon safe)',
+      mk.w === n && corners.every((c) => c[3] === 255), corners.map((c) => c[3]).join(','));
+    // …and still shows the candle in the safe zone.
+    const mid = mk.px(Math.floor(n / 2), Math.floor(n / 2));
+    check('pwa-maskable-' + n + '.png has the candle centred', mid[0] > 240 && mid[1] > 240 && mid[2] > 240, mid.join(','));
+    const edge = mk.px(Math.floor(n * 0.06), Math.floor(n / 2));
+    check('pwa-maskable-' + n + '.png leaves the edge as brand colour', edge[0] > 200 && edge[2] < 120, edge.join(','));
+  }
 
   return out;
 }

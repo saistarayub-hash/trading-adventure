@@ -9,6 +9,10 @@
  * (including its rate limiting), and a real end-to-end HTTP run against
  * server.js on a scratch port with a scratch data directory. */
 
+// server-companion reads COMPANION_TOKEN once at module load; the suite is
+// loaded before any require of it, so set the test token up here.
+process.env.COMPANION_TOKEN = 'test-token-123';
+
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -677,6 +681,7 @@ async function main() {
     isCreator: (session) => !!(session && session.user && session.user.username === 'yubi')
   });
 
+  let lastHeaders = null;
   function fakeExchange(ip, method, pathname, body, headers) {
     const req = new PassThrough();
     req.method = method;
@@ -685,6 +690,7 @@ async function main() {
     req.url = pathname;
     req._query = new URLSearchParams('');
     const res = { statusCode: 0, body: '', headers: {}, writeHead(c, h) { this.statusCode = c; this.headers = h || {}; }, end(b) { this.body = b || ''; } };
+  lastHeaders = res.headers;
     if (body !== undefined) { const s = JSON.stringify(body); setImmediate(() => { req.write(s); req.end(); }); } else setImmediate(() => req.end());
     return { req, res };
   }
@@ -694,7 +700,7 @@ async function main() {
     await gateApi.handle(x.req, x.res, pathname, session || null);
     let json = null;
     try { json = JSON.parse(x.res.body); } catch {}
-    return { status: x.res.statusCode, json };
+    return { status: x.res.statusCode, json, headers: x.res.headers };
   }
 
   const gLocal = await callGate('127.0.0.1', 'GET', '/api/companion/state');
@@ -716,6 +722,17 @@ async function main() {
   eq('LAN caller cannot probe localhost', gLanSsrf2.status, 403);
   const gLanSsrf3 = await callGate('192.168.1.42', 'POST', '/api/companion/ingest/url', { url: 'file:///etc/passwd' });
   eq('LAN caller cannot use file://', gLanSsrf3.status, 403);
+
+  // Phones (PWA / APK) reach the server cross-origin, authenticated by token.
+  const gPreflight = await callGate('203.0.113.9', 'OPTIONS', '/api/companion/state');
+  ok('CORS preflight answers 204 and allows the token header',
+    gPreflight.status === 204 && /x-companion-token/i.test(JSON.stringify(gPreflight.headers)), 'status ' + gPreflight.status);
+  const gToken = await callGate('203.0.113.9', 'GET', '/api/companion/state', undefined, { 'x-companion-token': 'test-token-123' });
+  ok('a valid token grants access from anywhere', gToken.status === 200, 'status ' + gToken.status);
+  const gBearer = await callGate('203.0.113.9', 'GET', '/api/companion/state', undefined, { authorization: 'Bearer test-token-123' });
+  ok('Authorization: Bearer works too', gBearer.status === 200, 'status ' + gBearer.status);
+  const gBadToken = await callGate('203.0.113.9', 'GET', '/api/companion/state', undefined, { 'x-companion-token': 'wrong' });
+  eq('a wrong token is still refused', gBadToken.status, 403);
 
   /* ═════════════════════════════ UI integrity ═════════════════════════════ */
 
@@ -852,6 +869,63 @@ async function main() {
     const afterWipe = await j('GET', '/api/companion/state');
     ok('state is empty after wipe', afterWipe.json.sources.length === 0);
   }
+
+  /* ═════════════════════════ android / PWA ═════════════════════════ */
+
+  section('android: PWA manifest, service worker, camera, mobile export');
+  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, 'manifest.webmanifest'), 'utf8'));
+  ok('manifest has the installability basics',
+    manifest.name && manifest.short_name && manifest.start_url && manifest.display === 'standalone' &&
+    manifest.background_color && manifest.theme_color, JSON.stringify(manifest.display));
+  ok('manifest ships any + maskable icons at 192 and 512',
+    ['any', 'maskable'].every((p) => [192, 512].every((n) =>
+      manifest.icons.some((i) => i.purpose === p && i.sizes === n + 'x' + n && fs.existsSync(path.join(__dirname, i.src.replace(/^\//, '')))))),
+    manifest.icons.map((i) => i.purpose + i.sizes).join(','));
+  for (const sc of manifest.shortcuts || []) {
+    ok('manifest shortcut url is a companion url: ' + sc.name, /^\/companion/.test(sc.url), sc.url);
+  }
+
+  const swSrc = fs.readFileSync(path.join(__dirname, 'sw.js'), 'utf8');
+  ok('service worker never caches the API', swSrc.includes("startsWith('/api/')"));
+  ok('service worker leaves other pages alone', swSrc.includes('if (!isCompanionPage(url.pathname)) return;'));
+  ok('service worker precaches the whole companion shell',
+    ['/companion', '/companion.js', '/ai.js', '/engine/coach.js'].every((u) => swSrc.includes("'" + u + "'")));
+  let swSyntax = true;
+  try { new (require('vm').Script)(swSrc, { filename: 'sw.js' }); } catch (e) { swSyntax = false; }
+  ok('sw.js parses as JavaScript', swSyntax);
+
+  const headHtml = fs.readFileSync(path.join(__dirname, 'companion.html'), 'utf8');
+  ok('companion.html links the manifest + theme colour + apple icon',
+    headHtml.includes('rel="manifest"') && headHtml.includes('name="theme-color"') && headHtml.includes('apple-touch-icon'));
+  ok('companion.js registers the worker only over http(s)',
+    uiJs.includes('registerServiceWorker') && uiJs.includes('/^https?:$/.test(location.protocol)'));
+  ok('install prompt wiring exists (beforeinstallprompt + appinstalled)',
+    uiJs.includes('beforeinstallprompt') && uiJs.includes('appinstalled') && uiJs.includes('btnInstallApp'));
+  ok('camera capture source exists and reuses the same pipeline',
+    uiJs.includes('const CameraCapture') && uiJs.includes('getUserMedia') && uiJs.includes("captureSource() === 'camera'"));
+  ok('phones default to the camera when screen share is impossible',
+    uiJs.includes('!md.getDisplayMedia && md.getUserMedia'));
+  ok('stopping watching releases the camera too', uiJs.includes('CameraCapture.stop();'));
+  ok('remote server mode is configurable (url + token)',
+    uiJs.includes('setServerUrl') && uiJs.includes('setServerToken') && uiJs.includes('X-Companion-Token'));
+  ok('the connection token is device-local, never uploaded with settings',
+    uiJs.includes('delete wire.serverUrl; delete wire.serverToken;') && uiJs.includes("localStorage.setItem('companionConn'"));
+
+  // static export for Capacitor
+  require('child_process').execFileSync(process.execPath, [path.join(__dirname, 'tools', 'make-mobile.js')], { cwd: __dirname, stdio: 'pipe' });
+  const www = path.join(__dirname, 'mobile', 'www');
+  ok('mobile export produced index.html', fs.existsSync(path.join(www, 'index.html')));
+  const mobHtml = fs.readFileSync(path.join(www, 'index.html'), 'utf8');
+  const mobRefs = Array.from(mobHtml.matchAll(/(?:src|href)="([^"#?]+)"/g)).map((m) => m[1]).filter((u) => !/^https?:/i.test(u));
+  ok('mobile export is self-contained', mobRefs.length > 5 && mobRefs.every((r) => fs.existsSync(path.join(www, r))),
+    mobRefs.filter((r) => !fs.existsSync(path.join(www, r))).join(', '));
+  const capCfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'mobile', 'capacitor.config.json'), 'utf8'));
+  ok('capacitor config points at the export and the right app id',
+    capCfg.webDir === 'www' && /^com\./.test(capCfg.appId) && capCfg.server && capCfg.server.androidScheme === 'https',
+    capCfg.appId);
+  const mobPkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'mobile', 'package.json'), 'utf8'));
+  ok('mobile package has the capacitor workflow scripts',
+    ['export', 'add:android', 'sync', 'open'].every((k) => !!mobPkg.scripts[k]));
 
   /* ═════════════════════════ packaging & installers ═════════════════════════ */
 

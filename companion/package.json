@@ -49,23 +49,88 @@
       "icon256.png"
     ],
     "extraResources": [
-      { "from": "../engine", "to": "app/engine", "filter": ["**/*.js"] },
-      { "from": "../companion.html", "to": "app/companion.html" },
-      { "from": "../companion.css", "to": "app/companion.css" },
-      { "from": "../companion.js", "to": "app/companion.js" },
-      { "from": "../ai.js", "to": "app/ai.js" },
-      { "from": "icon.png", "to": "app/companion/icon.png" },
-      { "from": "icon16.png", "to": "app/companion/icon16.png" },
-      { "from": "icon32.png", "to": "app/companion/icon32.png" },
-      { "from": "icon64.png", "to": "app/companion/icon64.png" },
-      { "from": "icon128.png", "to": "app/companion/icon128.png" },
-      { "from": "icon256.png", "to": "app/companion/icon256.png" }
+      {
+        "from": "../engine",
+        "to": "app/engine",
+        "filter": [
+          "**/*.js"
+        ]
+      },
+      {
+        "from": "../companion.html",
+        "to": "app/companion.html"
+      },
+      {
+        "from": "../companion.css",
+        "to": "app/companion.css"
+      },
+      {
+        "from": "../companion.js",
+        "to": "app/companion.js"
+      },
+      {
+        "from": "../ai.js",
+        "to": "app/ai.js"
+      },
+      {
+        "from": "icon.png",
+        "to": "app/companion/icon.png"
+      },
+      {
+        "from": "icon16.png",
+        "to": "app/companion/icon16.png"
+      },
+      {
+        "from": "icon32.png",
+        "to": "app/companion/icon32.png"
+      },
+      {
+        "from": "icon64.png",
+        "to": "app/companion/icon64.png"
+      },
+      {
+        "from": "icon128.png",
+        "to": "app/companion/icon128.png"
+      },
+      {
+        "from": "icon256.png",
+        "to": "app/companion/icon256.png"
+      },
+      {
+        "from": "../manifest.webmanifest",
+        "to": "app/manifest.webmanifest"
+      },
+      {
+        "from": "../sw.js",
+        "to": "app/sw.js"
+      },
+      {
+        "from": "packaging/pwa-192.png",
+        "to": "app/companion/packaging/pwa-192.png"
+      },
+      {
+        "from": "packaging/pwa-512.png",
+        "to": "app/companion/packaging/pwa-512.png"
+      },
+      {
+        "from": "packaging/pwa-maskable-192.png",
+        "to": "app/companion/packaging/pwa-maskable-192.png"
+      },
+      {
+        "from": "packaging/pwa-maskable-512.png",
+        "to": "app/companion/packaging/pwa-maskable-512.png"
+      }
     ],
     "asar": true,
     "compression": "maximum",
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "packaging/icon.ico"
     },
@@ -83,7 +148,13 @@
     },
     "mac": {
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "category": "public.app-category.education",
       "icon": "packaging/icon.icns",
@@ -94,8 +165,18 @@
     },
     "linux": {
       "target": [
-        { "target": "AppImage", "arch": ["x64"] },
-        { "target": "deb", "arch": ["x64"] }
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "category": "Education",
       "synopsis": "Always-on-top trading coach that learns from your material",

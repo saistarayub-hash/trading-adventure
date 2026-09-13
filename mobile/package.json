@@ -1,0 +1,18 @@
+{
+  "name": "trading-companion-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Capacitor shell that wraps the Trading Companion web app into a real Android APK.",
+  "scripts": {
+    "export": "node ../tools/make-mobile.js",
+    "add:android": "cap add android",
+    "sync": "npm run export && cap sync",
+    "open": "cap open android",
+    "build:apk": "cd android && ./gradlew assembleDebug"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  }
+}

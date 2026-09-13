@@ -21,7 +21,8 @@ const MIME = {
   '.jpg': 'image/jpeg',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
-  '.md': 'text/markdown; charset=utf-8'
+  '.md': 'text/markdown; charset=utf-8',
+  '.webmanifest': 'application/manifest+json; charset=utf-8'
 };
 
 function sendJSON(res, code, obj) {
@@ -279,7 +280,15 @@ function serveStatic(pathname, req, res) {
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404, { 'Content-Type': 'text/plain' }); res.end('404 Not Found: ' + urlPath); return; }
     const ext = path.extname(filePath).toLowerCase();
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+    const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream' };
+    if (urlPath === '/sw.js') {
+      // The worker may control the whole origin, and browsers refuse stale workers.
+      headers['Service-Worker-Allowed'] = '/';
+      headers['Cache-Control'] = 'no-cache';
+    } else if (ext === '.webmanifest') {
+      headers['Cache-Control'] = 'no-cache';
+    }
+    res.writeHead(200, headers);
     res.end(data);
   });
 }

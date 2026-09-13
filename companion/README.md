@@ -92,4 +92,11 @@ or `dist/`, which tooling tends to treat as disposable.
 Note: building an installer downloads Electron and the packaging tools from the internet once. The
 generated installers themselves need no internet at runtime except for the AI provider you choose.
 
+## Phones (Android / iOS)
+
+Electron stops at the desktop, so phones install the companion as a **PWA** (home-screen icon,
+full-screen, offline shell) from `manifest.webmanifest` + `sw.js`, and coach through the **camera**
+instead of a screen share. A Capacitor shell in `../mobile/` turns the same UI into a real APK.
+Details: [`../README-companion.md` §1b](../README-companion.md).
+
 📘 Full guide: [`../README-companion.md`](../README-companion.md)

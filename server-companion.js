@@ -87,7 +87,23 @@ function createCompanionApi(hooks) {
     const local = isLocalAddr(ip);
     const loopback = isLoopback(ip);
     const creator = !!(session && H.isCreator && H.isCreator(session));
-    const tokenOk = !!(COMPANION_TOKEN && String(req.headers['x-companion-token'] || '') === COMPANION_TOKEN);
+    const bearer = String(req.headers['authorization'] || '').replace(/^Bearer\s+/i, '');
+    const tokenOk = !!(COMPANION_TOKEN &&
+      (String(req.headers['x-companion-token'] || '') === COMPANION_TOKEN || bearer === COMPANION_TOKEN));
+
+    // CORS preflight. Announcing the capability leaks nothing: the real
+    // request still has to carry the token (or come from this machine).
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Companion-Token',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Max-Age': '600',
+        'Content-Length': 0
+      });
+      res.end();
+      return true;
+    }
     const openMode = COMPANION_OPEN === '1';
 
     if (!local && !creator && !tokenOk && !openMode) {
@@ -223,7 +239,7 @@ function sendJSON(res, code, obj) {
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(body),
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Companion-Token',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
   });
   res.end(body);

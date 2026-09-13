@@ -8,6 +8,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="companion.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b0f16">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Companion">
+<link rel="apple-touch-icon" href="companion/packaging/pwa-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="companion/packaging/pwa-192.png">
 </head>
 <body class="theme-dark" data-shell="browser">
 
@@ -262,8 +270,23 @@
         <select id="setCapture">
           <option value="screen" selected>Whole screen</option>
           <option value="window">A specific window (I will ask which)</option>
+          <option value="camera">📷 Camera — point it at your chart (phones)</option>
         </select>
       </label>
+      <div class="row">
+        <button class="btn small hidden" id="btnInstallApp">📲 Install as an app</button>
+        <span class="muted" id="installHint"></span>
+      </div>
+      <label class="fld">Companion server (for phones away from home)
+        <input id="setServerUrl" type="url" placeholder="http://192.168.1.20:8081 or your tunnel URL" autocomplete="off">
+      </label>
+      <label class="fld">Server token (COMPANION_TOKEN on the server)
+        <input id="setServerToken" type="password" placeholder="only needed over the internet" autocomplete="off">
+      </label>
+      <div class="row">
+        <button class="btn small" id="btnTestServer">🔌 Test connection</button>
+        <span class="muted">Leave empty to use the server this page came from.</span>
+      </div>
       <div class="row">
         <button class="btn small hidden" id="btnPickWin">🪟 Choose which window to watch…</button>
         <span class="hint" id="pickedWin"></span>

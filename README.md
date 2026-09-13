@@ -22,6 +22,8 @@ videos and links, which then **watches your screen and teaches you while you tra
 * 📓 Journal, rule-break tracking and a **✨ weekly review** that turns your entries into feedback.
 * 🔓 Works with **no API key at all** (offline demo mode). Add a brain when you want the vision model.
 * 🖱 Run it as a real desktop window, or in the browser with the identical interface.
+* 📱 **Android / iPhone**: installs as a full-screen app (PWA), and the **camera becomes the screen
+  share** — prop the phone up, point it at your monitor, get coached. A Capacitor shell builds a real APK.
 
 ```bash
 ./install.sh            # one-click install on macOS/Linux (install.bat on Windows)
