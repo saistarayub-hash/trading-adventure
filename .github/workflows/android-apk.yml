@@ -65,11 +65,27 @@ jobs:
           ls "$ANDROID_HOME/platforms" 2>/dev/null || true
           ls "$ANDROID_HOME/build-tools" 2>/dev/null || true
 
+      - name: Make sure the exact SDK platform Gradle wants is present
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "platforms;android-36" "build-tools;35.0.0" || true
+
       - name: Build the debug APK
         working-directory: mobile/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          set +e
+          ./gradlew assembleDebug --no-daemon --console=plain --stacktrace > /tmp/gradle.log 2>&1
+          CODE=$?
+          set -e
+          if [ "$CODE" -ne 0 ]; then
+            # Step logs live in blob storage this sandbox cannot reach, but
+            # annotations come back through the API — so mirror the failure.
+            tail -n 40 /tmp/gradle.log
+            tail -n 25 /tmp/gradle.log | sed 's/\r//' | awk '{ printf "::error file=gradle,line=%d::%s\n", NR, $0 }'
+            exit "$CODE"
+          fi
+          tail -n 5 /tmp/gradle.log
 
       - name: Report the artifact
         working-directory: mobile/android/app/build/outputs/apk/debug
