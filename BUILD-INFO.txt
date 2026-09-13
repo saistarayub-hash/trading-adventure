@@ -1,0 +1,4 @@
+run:   34780298505 (5)
+ref:   apk-v1.0.4
+built: 2026-09-13T20:19:08Z
+74e47b6f35de9c10ffeeef40f45f33313c90b62146a65bb90b133b7fd6fade59  app-debug.apk
