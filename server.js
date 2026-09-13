@@ -5,6 +5,7 @@ const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
 const AUTH = require('./auth');
+const ENGINE = require('./engine');
 
 const PORT = process.env.PORT || 8081;
 const ROOT = __dirname;
@@ -95,6 +96,29 @@ async function verifyGoogle(credential) {
 
 const LS_FILE = process.env.LESSONS_FILE || path.join(ROOT, 'lessons.json');
 let lessonsDb = loadLessons();
+
+/* ── Trading Companion knowledge base + API ─────────────────────────────────
+ * Distilled playbook cards can be published straight into lessons.json, so
+ * material the trader feeds the companion shows up in the main app too. */
+function publishLessons(lessons) {
+  let count = 0;
+  const errors = [];
+  for (const raw of lessons || []) {
+    const lesson = validateLesson(raw);
+    if (!lesson) { errors.push(String((raw && raw.id) || 'unknown')); continue; }
+    lesson.createdBy = AUTH.CREATOR;
+    const i = lessonsDb.lessons.findIndex((l) => l.id === lesson.id);
+    if (i >= 0) lessonsDb.lessons[i] = lesson; else lessonsDb.lessons.push(lesson);
+    count++;
+  }
+  if (count) saveLessons();
+  return { ok: count > 0, count, errors };
+}
+
+const COMPANION = require('./server-companion').createCompanionApi({
+  publishLessons,
+  isCreator: (session) => !!(session && session.user && AUTH.getRole(session.user) === 'creator')
+});
 
 function loadLessons() {
   try {
@@ -249,6 +273,7 @@ async function handleApi(req, res, pathname) {
 function serveStatic(pathname, req, res) {
   let urlPath = decodeURIComponent(pathname);
   if (urlPath === '/') urlPath = '/index.html';
+  if (urlPath === '/companion') urlPath = '/companion.html';
   let filePath = path.join(ROOT, urlPath);
   if (!filePath.startsWith(ROOT)) { res.writeHead(403); res.end('Forbidden'); return; }
   fs.readFile(filePath, (err, data) => {
@@ -274,6 +299,17 @@ const server = http.createServer(async (req, res) => {
   try {
     const u = new URL(req.url, 'http://localhost');
     const pathname = u.pathname.replace(/\/+$/, '') || '/';
+
+    // Trading Companion API — gated inside the module (local machine or creator).
+    if (pathname.startsWith('/api/companion')) {
+      if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+      const tk = bearer(req);
+      const session = tk ? AUTH.verifyToken(tk) : null;
+      req._query = u.searchParams;
+      await COMPANION.handle(req, res, pathname, session);
+      return;
+    }
+
     if (pathname.startsWith('/api/')) { await handleApi(req, res, pathname); return; }
     serveStatic(pathname, req, res);
   } catch (e) {

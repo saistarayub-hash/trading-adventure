@@ -278,6 +278,202 @@ const AI = {};
     return { q: q, options: options, answer: answer, why: String(data.why || '').trim() || 'The fox says: trust the lesson rule.' };
   }
 
+  /* =====================================================================
+   * COMPANION EXTENSIONS — vision (screen watching) + strict JSON calls.
+   * Everything below is additive: the existing chat/ask/story/question API
+   * is untouched, so the main app and test.js keep working exactly as before.
+   * ===================================================================== */
+
+  // Which providers can look at images, and which models to prefer for it.
+  const VISION = {
+    ollama: { ok: true, prefer: ['llama3.2-vision', 'llava', 'minicpm-v', 'bakllava', 'moondream', 'qwen2.5vl', 'llava:13b'] },
+    lmstudio: { ok: true, prefer: ['llama-3.2-vision', 'llava', 'minicpm-v', 'qwen2-vl', 'qwen2.5-vl'] },
+    openai: { ok: true, prefer: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1-nano'] },
+    groq: { ok: true, prefer: ['meta-llama-4-scout-17b-16e-instruct', 'llama-4-scout-17b-16e-instruct'] },
+    openrouter: { ok: true, prefer: ['openai/gpt-4o-mini', 'google/gemini-2.0-flash-001', 'anthropic/claude-3.5-haiku'] },
+    anthropic: { ok: true, prefer: ['claude-3-5-haiku-latest', 'claude-3-5-sonnet-latest', 'claude-sonnet-4-20250514'] },
+    gemini: { ok: true, prefer: ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro'] }
+  };
+
+  AI.VISION = VISION;
+
+  AI.canVision = function () {
+    const p = AI.getProvider();
+    return !!(VISION[p.id] && VISION[p.id].ok);
+  };
+
+  /** Pick a model that can actually see, preferring one already available. */
+  AI.visionModel = function () {
+    const p = AI.getProvider();
+    const cap = VISION[p.id];
+    if (!cap) return null;
+    const saved = (AI.cfg.vmodels || {})[p.id];
+    const pool = (AI.discovered && AI.discovered.length) ? AI.discovered : (p.catalog || []);
+    if (saved && (!pool.length || pool.indexOf(saved) >= 0)) return saved;
+    const lower = pool.map(function (m) { return String(m).toLowerCase(); });
+    for (const pref of cap.prefer) {
+      const hit = pool.find(function (m, i) { return lower[i] === pref || lower[i].indexOf(pref) === 0 || lower[i].indexOf(pref + ':') >= 0; });
+      if (hit) return hit;
+    }
+    // Nothing matched: keep the current model (many models are multi-modal now).
+    return AI.model || pool[0] || null;
+  };
+
+  AI.setVisionModel = function (m) {
+    if (!m) return;
+    AI.cfg.vmodels = AI.cfg.vmodels || {};
+    AI.cfg.vmodels[AI.getProvider().id] = m;
+    AI.persist();
+  };
+
+  function splitDataUrl(dataUrl) {
+    const s = String(dataUrl || '');
+    const m = /^data:([^;,]+)?(;base64)?,(.*)$/.exec(s);
+    if (!m) return null;
+    return { mime: m[1] || 'image/png', base64: m[3] || '' };
+  }
+
+  /**
+   * Ask the brain to look at one or more images.
+   * @param {string} system  system prompt
+   * @param {string} user    user prompt text
+   * @param {string[]} images array of data URLs (image/jpeg or image/png)
+   * @param {{temperature?:number, model?:string, maxTokens?:number}} [opts]
+   */
+  AI.vision = async function (system, user, images, opts) {
+    const o = opts || {};
+    if (!AI.online) {
+      const st = await AI.status();
+      if (!st.ok) return { ok: false, error: st.error || AI.lastError || 'Brain offline.' };
+    }
+    const p = AI.getProvider();
+    const cap = VISION[p.id];
+    if (!cap) return { ok: false, error: p.name + ' cannot look at images. Switch to Gemini, OpenAI, Anthropic, OpenRouter, Groq, or Ollama with a vision model (llama3.2-vision / llava).' };
+
+    const list = (images || []).map(splitDataUrl).filter(Boolean);
+    if (!list.length) return { ok: false, error: 'No screenshot was attached.' };
+    const model = o.model || AI.visionModel() || AI.model;
+    if (!model) return { ok: false, error: 'No vision model selected.' };
+
+    const ctx = {
+      base: AI.providerBase(),
+      key: (AI.cfg.keys[p.id] || '').trim(),
+      model: model
+    };
+    const temperature = o.temperature == null ? 0.25 : o.temperature;
+
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(function () { ctl.abort(); }, o.timeout || 180000);
+      let res, out;
+      const doFetch = function (url, init) {
+        return fetchFn(url, Object.assign({ signal: ctl.signal }, init));
+      };
+
+      if (p.id === 'gemini') {
+        const parts = [{ text: user }];
+        for (const img of list) parts.push({ inline_data: { mime_type: img.mime, data: img.base64 } });
+        res = await doFetch((ctx.base || p.defaultBase) + '/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(ctx.key), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: system }] },
+            contents: [{ role: 'user', parts: parts }],
+            generationConfig: { temperature: temperature }
+          })
+        });
+        const j = await res.json();
+        out = ((j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [])
+          .map(function (x) { return x.text || ''; }).join('\n');
+        if (!res.ok) out = 'ERROR ' + res.status + ': ' + (out || JSON.stringify(j).slice(0, 300));
+      } else if (p.id === 'anthropic') {
+        const content = [];
+        for (const img of list) content.push({ type: 'image', source: { type: 'base64', media_type: img.mime, data: img.base64 } });
+        content.push({ type: 'text', text: user });
+        res = await doFetch((ctx.base || p.defaultBase) + '/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': ctx.key, 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({ model: model, max_tokens: o.maxTokens || 1200, system: system, messages: [{ role: 'user', content: content }], temperature: temperature })
+        });
+        const j = await res.json();
+        out = ((j.content || []).filter(function (x) { return x.type === 'text'; }).map(function (x) { return x.text; }).join('\n'));
+        if (!res.ok) out = 'ERROR ' + res.status + ': ' + (out || JSON.stringify(j).slice(0, 300));
+      } else if (p.id === 'ollama') {
+        res = await doFetch((ctx.base || p.defaultBase) + '/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              { role: 'system', content: system },
+              { role: 'user', content: user, images: list.map(function (i) { return i.base64; }) }
+            ],
+            stream: false,
+            options: { temperature: temperature }
+          })
+        });
+        const j = await res.json();
+        out = (j.message && j.message.content) || '';
+        if (!res.ok) out = 'ERROR ' + res.status + ': ' + (out || JSON.stringify(j).slice(0, 300));
+      } else {
+        // OpenAI-compatible: openai, groq, openrouter, lmstudio
+        const content = [{ type: 'text', text: user }];
+        for (const img of list) content.push({ type: 'image_url', image_url: { url: 'data:' + img.mime + ';base64,' + img.base64 } });
+        const headers = { 'Content-Type': 'application/json' };
+        if (ctx.key) headers.Authorization = 'Bearer ' + ctx.key;
+        res = await doFetch((ctx.base || p.defaultBase) + '/chat/completions', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({
+            model: model,
+            messages: [{ role: 'system', content: system }, { role: 'user', content: content }],
+            temperature: temperature,
+            stream: false
+          })
+        });
+        const j = await res.json();
+        out = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+        if (!res.ok) out = 'ERROR ' + res.status + ': ' + (out || JSON.stringify(j).slice(0, 300));
+      }
+
+      clearTimeout(timer);
+      out = String(out || '').trim();
+      if (!out) return { ok: false, error: 'The brain replied with nothing.', model: model };
+      if (/^ERROR \d+/.test(out)) return { ok: false, error: out.slice(0, 400), model: model };
+      return { ok: true, text: out, model: model };
+    } catch (e) {
+      return { ok: false, error: 'Vision error: ' + (e && e.message ? e.message : e), model: model };
+    }
+  };
+
+  /**
+   * Ask for structured JSON with one automatic retry when the reply is unparseable.
+   * @param {string} system
+   * @param {string} user
+   * @param {(raw:string)=>({ok:boolean, error?:string}|null)} parse
+   * @param {{vision?:string[]}} [opts]
+   */
+  AI.json = async function (system, user, parse, opts) {
+    const o = opts || {};
+    const call = o.vision && o.vision.length
+      ? function (u) { return AI.vision(system, u, o.vision, o); }
+      : function (u) { return AI.ask(system, u); };
+
+    let res = await call(user);
+    if (!res.ok) return { ok: false, error: res.error };
+    let parsed = parse(res.text);
+    if (parsed && parsed.ok !== false) return { ok: true, data: parsed, raw: res.text, model: res.model };
+
+    // One firm retry — small models often wrap JSON in prose the first time.
+    const retry = user + '\n\nYour previous reply could not be parsed. Reply with ONLY the JSON object, ' +
+      'no markdown fences, no explanations, no text before or after.';
+    res = await call(retry);
+    if (!res.ok) return { ok: false, error: res.error };
+    parsed = parse(res.text);
+    if (parsed && parsed.ok !== false) return { ok: true, data: parsed, raw: res.text, model: res.model, retried: true };
+    return { ok: false, error: (parsed && parsed.error) || 'The brain did not return valid JSON after two attempts.', raw: res.text };
+  };
+
   if (typeof globalThis !== 'undefined') globalThis.AI = AI;
   if (typeof window !== 'undefined') window.AI = AI;
   if (typeof module !== 'undefined' && module.exports) module.exports = AI;

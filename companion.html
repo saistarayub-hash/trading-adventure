@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Companion — live coach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="companion.css">
+</head>
+<body class="theme-dark" data-shell="browser">
+
+<!-- ══════════════════════════ TOP BAR (drag region) ══════════════════════════ -->
+<header id="topbar">
+  <button id="btnAvatar" class="avatar" title="Coach">🦊</button>
+  <div class="tb-title">
+    <b>Trading Companion</b>
+    <span id="tbSub">live coach · offline demo mode</span>
+  </div>
+  <div class="tb-lights">
+    <span class="light" id="lightBrain" title="AI brain">🧠<i></i></span>
+    <span class="light" id="lightWatch" title="Screen watching">👁<i></i></span>
+    <span class="light" id="lightKb" title="Knowledge base">📚<i></i></span>
+  </div>
+  <div class="tb-btns">
+    <button class="tb-btn" id="btnBubble" title="Collapse to a floating bubble">◉</button>
+    <button class="tb-btn" id="btnSettings" title="Settings">⚙</button>
+    <button class="tb-btn" id="btnClose" title="Close">✕</button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════ TABS ═══════════════════════════════ -->
+<nav id="tabs">
+  <button class="tab active" data-view="coach">🎯 Coach</button>
+  <button class="tab" data-view="feed">📥 Feed</button>
+  <button class="tab" data-view="library">📚 Library</button>
+  <button class="tab" data-view="learn">🎓 Learn</button>
+  <button class="tab" data-view="journal">📓 Journal</button>
+</nav>
+
+<main id="main">
+
+  <!-- ───────────────────────────── COACH ───────────────────────────── -->
+  <section class="view active" id="view-coach">
+    <div class="watchbar">
+      <button id="btnWatch" class="btn primary">▶ Start watching</button>
+      <button id="btnLook" class="btn" title="Analyse one frame right now">📸 Look now</button>
+      <label class="inline">
+        every
+        <select id="selInterval">
+          <option value="5000">5s</option>
+          <option value="8000" selected>8s</option>
+          <option value="15000">15s</option>
+          <option value="30000">30s</option>
+          <option value="60000">60s</option>
+        </select>
+      </label>
+      <label class="inline">
+        <select id="selSensitivity" title="How often the coach speaks up">
+          <option value="calm">calm</option>
+          <option value="normal" selected>normal</option>
+          <option value="chatty">chatty</option>
+        </select>
+      </label>
+    </div>
+
+    <div id="watchMeta" class="meta-row">
+      <span id="watchState" class="chip chip-off">not watching</span>
+      <span id="watchFrames" class="chip">0 frames</span>
+      <span id="watchModel" class="chip">no brain</span>
+      <span id="watchHint" class="chip chip-hint">offline demo mode works with no API key</span>
+    </div>
+
+    <div id="cardStream" class="stream"></div>
+
+    <div id="coachEmpty" class="empty">
+      <div class="empty-emoji">🦊</div>
+      <h3>Your coach is ready</h3>
+      <p>Press <b>▶ Start watching</b> and put a chart on screen. Every few seconds I look at it,
+         compare it with what <b>you</b> fed me, and tell you what I see, the rule that applies,
+         the risk, and one thing to learn.</p>
+      <div class="empty-steps">
+        <div><b>1</b> Feed me a video or article in the <b>Feed</b> tab</div>
+        <div><b>2</b> Press <b>Distil</b> so I turn it into a playbook card</div>
+        <div><b>3</b> Start watching and trade on a demo account</div>
+      </div>
+      <button class="btn primary" id="btnEmptyFeed">📥 Go feed me something</button>
+    </div>
+
+    <form id="askForm" class="askbar">
+      <input id="askInput" placeholder="Ask about this screen… (e.g. is this a valid pullback?)" autocomplete="off">
+      <button type="submit" class="btn primary">Ask ➤</button>
+    </form>
+  </section>
+
+  <!-- ───────────────────────────── FEED ────────────────────────────── -->
+  <section class="view" id="view-feed">
+    <div class="panel">
+      <h3>🔗 Feed me a link</h3>
+      <p class="hint">YouTube links are read automatically (captions + chapters + description).
+        Articles, blogs and docs get their main text extracted. One link per line — up to 12 at a time.</p>
+      <textarea id="inUrls" rows="3" placeholder="https://www.youtube.com/watch?v=…&#10;https://www.babypips.com/learn/forex/…"></textarea>
+      <div class="row">
+        <button class="btn primary" id="btnLearnUrls">📥 Learn these</button>
+        <label class="inline">captions
+          <select id="selLang">
+            <option value="en" selected>English</option>
+            <option value="es">Spanish</option>
+            <option value="pt">Portuguese</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="hi">Hindi</option>
+            <option value="ar">Arabic</option>
+            <option value="id">Indonesian</option>
+            <option value="ja">Japanese</option>
+          </select>
+        </label>
+      </div>
+      <div id="ingestLog" class="log"></div>
+    </div>
+
+    <div class="panel">
+      <h3>📝 Paste text or a transcript</h3>
+      <p class="hint">Video without captions? Open it → <i>…</i> → <i>Show transcript</i> → copy → paste here.
+        Also good for your own notes, a strategy write-up, or a chat log.</p>
+      <input id="inTextTitle" placeholder="Title (optional)">
+      <textarea id="inText" rows="5" placeholder="Paste the transcript, article text or your own notes…"></textarea>
+      <div class="row">
+        <button class="btn primary" id="btnLearnText">📥 Learn this text</button>
+        <button class="btn" id="btnPickFile">📄 Upload a file…</button>
+        <input type="file" id="inFile" class="hidden-file"
+               accept=".txt,.md,.markdown,.csv,.json,.log,.srt,.vtt,.html,.htm,.pdf">
+        <span class="hint" id="fileHint">.txt .md .csv .json .srt .vtt .html .pdf</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>📚 What I have learned</h3>
+      <div id="kbStats" class="stat-row"></div>
+      <div id="sourceList" class="list"></div>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────── LIBRARY ──────────────────────────── -->
+  <section class="view" id="view-library">
+    <div class="panel">
+      <h3>🔎 Search your knowledge</h3>
+      <form id="searchForm" class="row">
+        <input id="inSearch" placeholder="e.g. where do I put my stop on a breakout retest?" autocomplete="off">
+        <button class="btn primary" type="submit">Search</button>
+      </form>
+      <div id="searchResults" class="results"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>🎯 Your playbook cards</h3>
+        <span class="hint" id="cardCount"></span>
+      </div>
+      <p class="hint">Cards are distilled from the material you fed me: exact setup, entry, invalidation,
+        target, risk and a pre-trade checklist. The live coach prefers these over generic advice.</p>
+      <div id="cardList" class="list"></div>
+    </div>
+
+    <div class="panel">
+      <h3>📖 Glossary I built from your sources</h3>
+      <div id="termList" class="terms"></div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── LEARN ───────────────────────────── -->
+  <section class="view" id="view-learn">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>🧭 Your next best lesson</h3>
+        <button class="btn small" id="btnRefreshPlan">↻ Recalculate</button>
+      </div>
+      <p class="hint" id="planHint"></p>
+      <div id="planList" class="list"></div>
+    </div>
+
+    <div class="panel">
+      <h3>📊 Skill profile</h3>
+      <div id="skillBars" class="skills"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>🧩 All 20 modules</h3>
+        <button class="btn small" id="btnQuizMe">🎲 Quiz me</button>
+      </div>
+      <div id="moduleList" class="modules"></div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── JOURNAL ─────────────────────────── -->
+  <section class="view" id="view-journal">
+    <div class="panel">
+      <h3>📓 Add an entry</h3>
+      <textarea id="inJournal" rows="3" placeholder="What happened, what did you feel, which rule did you follow or break?"></textarea>
+      <div class="row">
+        <select id="selJournalKind">
+          <option value="note">note</option>
+          <option value="trade">trade</option>
+          <option value="rule-break">rule break ⚠</option>
+          <option value="win">good process ✓</option>
+          <option value="review">review</option>
+        </select>
+        <input id="inJournalOutcome" placeholder="outcome, e.g. +1.2R / -1R / skipped">
+        <button class="btn primary" id="btnAddJournal">Add</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>🔁 Patterns in your journal</h3>
+        <button class="btn small" id="btnReview">✨ Weekly review</button>
+      </div>
+      <div id="journalInsights" class="insights"></div>
+    </div>
+
+    <div class="panel">
+      <h3>🗒 Entries</h3>
+      <div id="journalList" class="list"></div>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────── SETTINGS ─────────────────────────── -->
+  <section class="view" id="view-settings">
+    <div class="panel">
+      <h3>🧠 Brain (the AI that reads your screen)</h3>
+      <p class="hint">Keys are stored <b>only on this machine</b> and calls go straight from the app to the
+        provider. Screen-watching needs a model that can see images — Gemini's free tier is the easiest start.</p>
+      <label class="fld">Provider
+        <select id="setProvider"></select>
+      </label>
+      <label class="fld" id="wrapKey">API key
+        <input type="password" id="setKey" placeholder="paste your key" autocomplete="off">
+      </label>
+      <label class="fld" id="wrapBase">Server address
+        <input type="text" id="setBase" placeholder="http://localhost:11434">
+      </label>
+      <label class="fld">Text model
+        <select id="setModel"></select>
+      </label>
+      <input type="text" id="setModelOther" placeholder="…or type a model name">
+      <label class="fld">Vision model (for screenshots)
+        <select id="setVisionModel"></select>
+      </label>
+      <div class="row">
+        <button class="btn primary" id="btnBrainTest">🧠 Test &amp; save</button>
+        <label class="inline chk"><input type="checkbox" id="setDemoMode"> Force offline demo mode (no AI calls at all)</label>
+      </div>
+      <div id="brainMsg" class="msg"></div>
+      <p class="hint" id="visionHint"></p>
+    </div>
+
+    <div class="panel">
+      <h3>👁 Screen watching</h3>
+      <label class="fld">Capture
+        <select id="setCapture">
+          <option value="screen" selected>Whole screen</option>
+          <option value="window">A specific window (I will ask which)</option>
+        </select>
+      </label>
+      <div class="row">
+        <button class="btn small hidden" id="btnPickWin">🪟 Choose which window to watch…</button>
+        <span class="hint" id="pickedWin"></span>
+      </div>
+      <label class="fld">Image quality
+        <select id="setQuality">
+          <option value="0.5">low (faster, cheaper)</option>
+          <option value="0.72" selected>balanced</option>
+          <option value="0.88">high (best detail, more tokens)</option>
+        </select>
+      </label>
+      <label class="fld">Max image width
+        <select id="setMaxW">
+          <option value="800">800 px</option>
+          <option value="1100" selected>1100 px</option>
+          <option value="1500">1500 px</option>
+        </select>
+      </label>
+      <label class="inline chk"><input type="checkbox" id="setPauseHidden"> Pause watching when the companion is hidden</label>
+    </div>
+
+    <div class="panel">
+      <h3>🛡 Your risk defaults (the coach enforces these)</h3>
+      <label class="fld">Risk per trade
+        <select id="setRisk">
+          <option value="0.25">0.25% (very safe)</option>
+          <option value="0.5">0.5%</option>
+          <option value="1" selected>1% (recommended)</option>
+          <option value="2">2% (aggressive)</option>
+        </select>
+      </label>
+      <label class="fld">Account size (for position-size maths)
+        <input type="number" id="setAccount" placeholder="e.g. 2000" min="0" step="100">
+      </label>
+      <label class="fld">Daily loss cap
+        <select id="setDailyCap">
+          <option value="2" selected>2% then stop</option>
+          <option value="3">3% then stop</option>
+          <option value="5">5% then stop</option>
+          <option value="0">no cap (not advised)</option>
+        </select>
+      </label>
+      <button class="btn" id="btnSizeCalc">🧮 Position size calculator</button>
+      <div id="sizeCalc" class="calc hidden"></div>
+    </div>
+
+    <div class="panel shell-only">
+      <h3>🪟 Window</h3>
+      <label class="inline chk"><input type="checkbox" id="setOnTop" checked> Always on top</label>
+      <label class="fld">Dock
+        <select id="setDock">
+          <option value="right" selected>Right edge</option>
+          <option value="left">Left edge</option>
+        </select>
+      </label>
+      <label class="fld">Opacity <input type="range" id="setOpacity" min="55" max="100" value="100"></label>
+      <label class="fld">Width <input type="range" id="setWidth" min="330" max="620" value="400"></label>
+      <p class="hint">Shortcuts: <kbd>Ctrl/Cmd+Shift+Space</kbd> show/hide · <kbd>Ctrl/Cmd+Shift+L</kbd> toggle watching ·
+        <kbd>Ctrl/Cmd+Shift+B</kbd> bubble mode</p>
+    </div>
+
+    <div class="panel">
+      <h3>💾 Your data</h3>
+      <p class="hint" id="dataPath"></p>
+      <div class="row">
+        <button class="btn" id="btnExport">⬇ Export knowledge base</button>
+        <button class="btn" id="btnImport">⬆ Import</button>
+        <button class="btn danger" id="btnWipe">🗑 Erase everything</button>
+        <input type="file" id="inImport" class="hidden-file" accept=".json">
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ═════════════════════════ BUBBLE (collapsed mode) ═════════════════════════ -->
+<div id="bubble" class="bubble hidden" title="Click to open the companion">
+  <span id="bubbleDot" class="bubble-dot"></span>
+  <span id="bubbleText">🦊</span>
+</div>
+
+<!-- ═════════════════════════════ MODALS ═════════════════════════════ -->
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-head">
+      <span id="modalTitle">Title</span>
+      <button class="tb-btn" id="modalClose">✕</button>
+    </div>
+    <div id="modalBody" class="modal-body"></div>
+    <div id="modalFoot" class="modal-foot"></div>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+
+<footer id="statusbar">
+  <span id="sbLeft">ready</span>
+  <span id="sbRight">education, not financial advice</span>
+</footer>
+
+<!-- engine: pure reasoning modules (safe in a browser/Electron renderer) -->
+<script src="engine/embed.js"></script>
+<script src="engine/chunk.js"></script>
+<script src="engine/bm25.js"></script>
+<script src="engine/vision.js"></script>
+<script src="engine/curriculum.js"></script>
+<script src="engine/distill.js"></script>
+<script src="engine/coach.js"></script>
+<!-- multi-provider AI layer, with the vision + JSON extensions -->
+<script src="ai.js"></script>
+<!-- companion UI -->
+<script src="companion.js"></script>
+</body>
+</html>

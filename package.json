@@ -1,12 +1,18 @@
 {
   "name": "trading-tutor",
-  "version": "1.0.0",
-  "description": "Professor Fox - learn trading the easy way. Kid-friendly lessons, quizzes, and a multi-provider AI tutor.",
+  "version": "1.1.0",
+  "description": "Professor Fox \u2014 learn trading the easy way \u2014 plus the Trading Companion: an always-on-top desktop coach that learns from the videos and links you feed it and teaches you live on your screen.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node test.js"
+    "companion": "npm --prefix companion start",
+    "companion:install": "npm --prefix companion install",
+    "test": "node test.js && node test-companion.js",
+    "demo:seed": "node tools/seed-demo.js"
   },
   "dependencies": {},
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
 }

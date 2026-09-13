@@ -3,6 +3,37 @@
 Learn trading the easy way — written like a 10-year-old would understand it.
 Short fun lessons, friendly quizzes, points and levels that add up, and your own AI tutor fox.
 
+---
+
+## 🖥 New: the Trading Companion
+
+A second app for the person actually sitting at the charts: an **always-on-top side panel** that you feed
+videos and links, which then **watches your screen and teaches you while you trade**.
+
+* 📥 **Feed it** — YouTube links, articles, PDFs, subtitle files or pasted notes/transcripts.
+* 🧠 **It learns them properly** — text is extracted, chunked, embedded **locally** and indexed with both
+  BM25 and vector search, so retrieval is hybrid, fast and click-through citable.
+* ✨ **Distil** any source into strategy cards: setup → entry → invalidation → target → risk → checklist.
+* 👀 **Watch mode** — screenshots every few seconds; an offline pixel-level chart reader plus (optionally)
+  a vision model; the coach speaks up **only when something meaningful changed**.
+* 🎯 Every card reads: 👀 what I see · 📏 the rule · ✅ what to do · ⚠️ risk · 🎓 learn this — grounded in
+  **your** material, never generic filler, and it never says "buy" or "sell".
+* 📚 A built-in **20-module curriculum** adapts to your weakest topics *and* to the gaps in your library.
+* 📓 Journal, rule-break tracking and a **✨ weekly review** that turns your entries into feedback.
+* 🔓 Works with **no API key at all** (offline demo mode). Add a brain when you want the vision model.
+* 🖱 Run it as a real desktop window, or in the browser with the identical interface.
+
+```bash
+cd companion && npm install && npm start   # desktop panel (Electron)
+node server.js                             # or browser: http://localhost:8081/companion
+node tools/seed-demo.js                    # optional: load a starter library to try it immediately
+```
+
+📘 **Full guide → [`README-companion.md`](README-companion.md)** ·
+🖥 **Desktop shell → [`companion/README.md`](companion/README.md)**
+
+---
+
 ## Quick start
 
 Simplest way — just double-click **`index.html`**. Everything runs in your browser. No install.
@@ -120,12 +151,24 @@ quiz questions. You can plug in **any of these** inside the app: open the **"Ask
 - `ai.js` — multi-provider AI layer (Ollama, OpenAI, Anthropic, Gemini, Groq, OpenRouter, LM Studio)
 - `app.js` — quiz engine, scoring, levels, chat UI, accounts, Google sign-in, lesson editor
 - `auth.js` — user accounts, secure password hashing, signed tokens, progress storage, Google users
-- `server.js` — web server + accounts/lessons API (`/api/…`)
+- `server.js` — web server + accounts/lessons API (`/api/…`) + the companion API (`/api/companion/…`)
 - `lessons.json` — lessons you publish from the editor (created automatically)
 - `test.js` — smoke tests (run with `node test.js`)
+
+**The Trading Companion** ([full guide](README-companion.md)):
+
+- `engine/` — the companion's brain, zero dependencies: `net` `text` `youtube` `ingest` `chunk` `embed`
+  `bm25` `kb` `vision` `curriculum` `distill` `coach`
+- `companion.html` / `companion.css` / `companion.js` — the companion UI (Electron and browser, unchanged)
+- `companion-core.js` — storage + operations layer shared by both shells
+- `server-companion.js` — HTTP adapter: local/creator access gate and SSRF guard
+- `companion/` — the Electron desktop shell (always-on-top window, tray, shortcuts, screen capture)
+- `tools/seed-demo.js` — loads a starter library so you can try it right away
+- `test-companion.js` — 311 tests for everything above (run with `node test-companion.js`)
 
 ## Fun safety rule
 
 Everything here is **pretend-info for learning**. Real trading can lose real money.
 Rule #1 of trading, taught in Lesson 6: **never risk more than you can afford to lose**.
-This tool is for education, not financial advice.
+This tool is for education, not financial advice — the Trading Companion included. It teaches a process;
+it does not give signals, and it will refuse to.

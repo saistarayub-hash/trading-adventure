@@ -1,0 +1,20 @@
+# dependencies (Electron shell)
+node_modules/
+
+# runtime data created by the companion / server
+.data/
+companion/.data/
+users.json
+lessons.json
+knowledge.json
+*.log
+
+# secrets — the signing key auth.js generates must never be committed
+.secret
+.secret.*
+*.key
+.env
+
+# os junk
+.DS_Store
+Thumbs.db

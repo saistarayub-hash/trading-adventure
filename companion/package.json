@@ -1,0 +1,24 @@
+{
+  "name": "trading-companion",
+  "productName": "Trading Companion",
+  "version": "1.0.0",
+  "description": "Always-on-top desktop companion that learns from the videos and links you feed it, then coaches you live while you watch charts.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --enable-logging"
+  },
+  "keywords": [
+    "trading",
+    "education",
+    "coach",
+    "electron",
+    "rag",
+    "companion"
+  ],
+  "author": "Yubi",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^44.0.0"
+  }
+}
