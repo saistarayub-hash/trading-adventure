@@ -111,9 +111,21 @@ npx cap add android && npx cap sync
 npx cap open android             # Android Studio → Run / Build APK
 ```
 
-The APK is the same web app in a WebView; enter your server URL once in Settings. Building the APK needs
-the Android SDK on your machine (Android Studio installs it). `mobile/android/`, `mobile/www/` are
-gitignored — they are generated, not source.
+The APK is the same web app in a WebView; enter your server URL once in Settings. `mobile/android/`,
+`mobile/www/` are gitignored — they are generated, not source.
+
+**Already built for you:** the repo's GitHub Action (`.github/workflows/android-apk.yml`) builds the APK
+on every `apk-*` tag and mirrors it onto the orphan branch `apk-artifact`:
+
+```bash
+git fetch origin apk-artifact
+git show origin/apk-artifact:app-debug.apk > Trading-Companion.apk
+git show origin/apk-artifact:BUILD-INFO.txt          # run id, tag, sha256
+```
+
+(or download the `trading-companion-apk` artifact from the Actions tab). Copy the APK to the phone, tap
+it, allow "install unknown apps". It is **debug-signed**, which is fine for sideloading; for a store
+build add your keystore and switch to `assembleRelease`.
 
 ---
 

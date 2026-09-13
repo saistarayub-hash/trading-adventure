@@ -927,6 +927,40 @@ async function main() {
   ok('mobile package has the capacitor workflow scripts',
     ['export', 'add:android', 'sync', 'open'].every((k) => !!mobPkg.scripts[k]));
 
+  // If a built APK has been fetched into apk/ (see BUILD-INFO.txt), verify it.
+  const apkPath = path.join(__dirname, 'apk', 'app-debug.apk');
+  if (fs.existsSync(apkPath)) {
+    const fd = fs.openSync(apkPath, 'r');
+    const magic = Buffer.alloc(4);
+    fs.readSync(fd, magic, 0, 4, 0);
+    fs.closeSync(fd);
+    ok('fetched APK is a zip/apk', magic.toString('hex') === '504b0304', magic.toString('hex'));
+    const raw = fs.readFileSync(apkPath);
+    let eocd = -1;
+    for (let i = raw.length - 22; i >= 0 && i >= raw.length - 70000; i--) {
+      if (raw.readUInt32LE(i) === 0x06054b50) { eocd = i; break; }
+    }
+    ok('fetched APK has an intact zip central directory', eocd > 0);
+    const names = [];
+    if (eocd > 0) {
+      const count = raw.readUInt16LE(eocd + 10);
+      let p = raw.readUInt32LE(eocd + 16);
+      for (let i = 0; i < count; i++) {
+        if (raw.readUInt32LE(p) !== 0x02014b50) break;
+        const nl = raw.readUInt16LE(p + 28);
+        names.push(raw.toString('utf8', p + 46, p + 46 + nl));
+        p += 46 + nl + raw.readUInt16LE(p + 30) + raw.readUInt16LE(p + 32);
+      }
+    }
+    ok('APK carries the android triple + the exported web app',
+      names.includes('AndroidManifest.xml') && names.includes('classes.dex') &&
+      names.includes('assets/public/index.html') && names.includes('assets/public/engine/coach.js'),
+      names.length + ' entries');
+    ok('APK is signed (debug certificate)', names.some((n) => n === 'META-INF/CERT.RSA'));
+  } else {
+    console.log('  SKIP  APK artifact verification (no apk/app-debug.apk — fetch it: git fetch origin apk-artifact)');
+  }
+
   /* ═════════════════════════ packaging & installers ═════════════════════════ */
 
   section('packaging and installers');
