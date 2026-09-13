@@ -161,6 +161,15 @@ async function main() {
   const stats = kb.stats();
   ok('stats report coverage gaps', Array.isArray(stats.coverageGaps) && stats.coverageGaps.length > 0);
   ok('stats count words', stats.words > 300);
+  // The UI reads stats.tags as {tag, n}; kind markers are not topics.
+  ok('stats.tags use the {tag,n} shape', Array.isArray(stats.tags) && stats.tags.length > 0 &&
+    stats.tags.every((t) => typeof t.tag === 'string' && typeof t.n === 'number' && t.n >= 1), JSON.stringify(stats.tags));
+  ok('stats.tags exclude kind markers', !stats.tags.some((t) => ['pasted', 'video', 'file', 'article'].indexOf(t.tag) >= 0));
+  // One stray word must not tag a whole document as a topic.
+  const noisy = TCEngine.embed.topicTags('We closed the margin account and reduced leverage before the weekend.');
+  ok('a stray word does not tag a document', !noisy.some((t) => t.tag === 'options & derivatives'), JSON.stringify(noisy.map((t) => t.tag)));
+  const clean = TCEngine.embed.topicTags('Risk management: risk one percent per trade, place the stop loss, and size the position from the stop distance.');
+  ok('repeated topic words do tag a document', clean.some((t) => t.tag === 'risk management'), JSON.stringify(clean.map((t) => t.tag)));
   ok('export keeps source text for re-import', kb.exportAll().sources.every((s) => typeof s.text === 'string'));
 
   /* ═════════════════════════════ text extraction ═════════════════════════════ */
