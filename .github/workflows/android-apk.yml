@@ -27,6 +27,10 @@ concurrency:
   group: android-apk
   cancel-in-progress: true
 
+permissions:
+  contents: write   # to mirror the finished APK onto the apk-artifact branch
+  actions: read
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -101,3 +105,31 @@ jobs:
           path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+
+      # Artifact downloads live on blob storage, which firewalled machines
+      # (like the dev sandbox) cannot reach. Git always works, so mirror the
+      # finished APK onto a throw-away orphan branch: fetch it with
+      #   git fetch origin apk-artifact && git show origin/apk-artifact:app-debug.apk > app.apk
+      - name: Mirror the APK onto the apk-artifact branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          SRC=mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          PUB=/tmp/apkpub
+          rm -rf $PUB && mkdir -p $PUB
+          cp "$SRC" $PUB/app-debug.apk
+          {
+            echo "run:   $GITHUB_RUN_ID ($GITHUB_RUN_NUMBER)"
+            echo "ref:   $GITHUB_REF_NAME"
+            echo "built: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            sha256sum $PUB/app-debug.apk | sed 's|/tmp/apkpub/||'
+          } > $PUB/BUILD-INFO.txt
+          cd $PUB
+          git init -q -b apk-artifact .
+          git config user.name "APK Builder"
+          git config user.email "actions@github.com"
+          git add -A
+          git commit -q -m "Trading Companion APK from run $GITHUB_RUN_ID ($GITHUB_REF_NAME)"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" apk-artifact
+          echo "mirrored to branch apk-artifact"
