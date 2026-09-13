@@ -40,11 +40,11 @@ jobs:
         with:
           node-version: 22
 
-      - name: Set up JDK 17 (required by the Android Gradle plugin)
+      - name: Set up JDK 21 (Capacitor 7 compiles with source release 21)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Export the companion web app to mobile/www
         run: node tools/make-mobile.js
