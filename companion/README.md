@@ -63,11 +63,33 @@ event subscriptions. `contextIsolation` is on, `nodeIntegration` is off, and the
 If frames come back empty, switch to "capture a specific window", or run the browser mode
 (`node server.js` → `http://localhost:8081/companion`).
 
-## Packaging (optional)
+## Installers
 
-The shell has no build step and no dependencies other than Electron. To ship an installer, add
-[`electron-builder`](https://www.electron.build/) as a dev dependency and point it at this folder, making
-sure the parent project files (`engine/`, `companion-core.js`, `companion.html/.js/.css`, `ai.js`) are
-included as extra resources — the panel loads them by relative path.
+Everything is already wired up — `electron-builder` config lives in this folder's `package.json` and the
+installer icons are generated, not hand-drawn (`node ../tools/make-icons.js`, verified by `npm run icons:check`).
+
+```bash
+./install.sh --installer      # macOS / Linux: build a .dmg or AppImage+.deb
+install.bat /installer        # Windows: build the Setup .exe
+```
+
+or by hand:
+
+| Target | Command | Output |
+|---|---|---|
+| Windows | `npm run dist:win` | `release/Trading-Companion-Setup-1.0.0-win-x64.exe` (NSIS, per-user, desktop + start-menu shortcuts) |
+| macOS | `npm run dist:mac` | `release/...dmg` for x64 **and** arm64, unsigned (no certificate needed; first launch via right-click → Open) |
+| Linux | `npm run dist:linux` | `release/...AppImage` + `...deb` |
+
+The `build.extraResources` list copies the shared files (`engine/`, `companion.html`, `companion.css`,
+`companion.js`, `ai.js`, icons) next to the packaged app under `<resources>/app`, which is exactly where
+`main.js` looks when `app.isPackaged` is true — an asar archive cannot reach outside itself. The test
+suite asserts every asset the UI loads is covered by that list, so the packaged app cannot 404 a script.
+
+Output goes to `release/` (gitignored), icons live in `packaging/` — deliberately *not* named `build/`
+or `dist/`, which tooling tends to treat as disposable.
+
+Note: building an installer downloads Electron and the packaging tools from the internet once. The
+generated installers themselves need no internet at runtime except for the AI provider you choose.
 
 📘 Full guide: [`../README-companion.md`](../README-companion.md)

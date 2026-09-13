@@ -37,7 +37,18 @@ window to watch, quit. Closing the window hides it — quit from the tray.
 
 Settings → **Window** lets you dock it left or right, change width, opacity and always-on-top.
 
-### Option B — in the browser (no install)
+### Option B — one-click install (installer scripts)
+
+```bash
+./install.sh          # macOS / Linux: deps + launcher in ~/.local/bin + menu entry
+install.bat           # Windows: deps + Desktop & Start-Menu shortcuts (no admin needed)
+```
+
+Add `--installer` / `/installer` to also build a **real installer**: a Windows Setup `.exe` (NSIS),
+a macOS `.dmg` (x64 + arm64), or a Linux AppImage + `.deb`, into `companion/release/`.
+`--remove` / `/remove` undoes the shortcuts; `--dry-run` / `/dry` shows what would happen.
+
+### Option C — in the browser (no install)
 
 ```bash
 node server.js
@@ -47,6 +58,16 @@ node server.js
 Same interface. Screen watching uses the browser's share-screen prompt instead of silent capture, and
 the panel cannot float over *other* applications. Great for trying it out or using it on a second monitor
 in its own window.
+
+### Which one should I pick?
+
+| | Desktop (A) | Installer (B) | Browser (C) |
+|---|---|---|---|
+| Floats above your charting app | ✅ | ✅ | ❌ |
+| Silent capture, no prompt | ✅ | ✅ | share prompt |
+| Needs Node.js | ✅ | ✅ | ✅ (server) |
+| Needs Electron download | ✅ | ✅ | ❌ |
+| Good for a first look | | | ✅ |
 
 ### Try it with sample material first
 

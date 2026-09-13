@@ -8,7 +8,12 @@
     "companion": "npm --prefix companion start",
     "companion:install": "npm --prefix companion install",
     "test": "node test.js && node test-companion.js",
-    "demo:seed": "node tools/seed-demo.js"
+    "demo:seed": "node tools/seed-demo.js",
+    "icons": "node tools/make-icons.js",
+    "companion:dist": "npm --prefix companion run dist",
+    "companion:dist:win": "npm --prefix companion run dist:win",
+    "companion:dist:mac": "npm --prefix companion run dist:mac",
+    "companion:dist:linux": "npm --prefix companion run dist:linux"
   },
   "dependencies": {},
   "license": "MIT",

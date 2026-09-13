@@ -9,6 +9,9 @@ lessons.json
 knowledge.json
 *.log
 
+# installer output (electron-builder)
+companion/release/
+
 # secrets — the signing key auth.js generates must never be committed
 .secret
 .secret.*

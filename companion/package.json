@@ -6,7 +6,13 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dev": "electron . --enable-logging"
+    "dev": "electron . --enable-logging",
+    "icons": "node ../tools/make-icons.js",
+    "icons:check": "node ../tools/make-icons.js --check",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
   },
   "keywords": [
     "trading",
@@ -19,6 +25,83 @@
   "author": "Yubi",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^44.0.0"
+    "electron": "^44.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.professorfox.tradingcompanion",
+    "productName": "Trading Companion",
+    "copyright": "Professor Fox's Trading Adventure",
+    "artifactName": "Trading-Companion-Setup-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "release",
+      "buildResources": "packaging"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json",
+      "icon.png",
+      "icon16.png",
+      "icon32.png",
+      "icon64.png",
+      "icon128.png",
+      "icon256.png"
+    ],
+    "extraResources": [
+      { "from": "../engine", "to": "app/engine", "filter": ["**/*.js"] },
+      { "from": "../companion.html", "to": "app/companion.html" },
+      { "from": "../companion.css", "to": "app/companion.css" },
+      { "from": "../companion.js", "to": "app/companion.js" },
+      { "from": "../ai.js", "to": "app/ai.js" },
+      { "from": "icon.png", "to": "app/companion/icon.png" },
+      { "from": "icon16.png", "to": "app/companion/icon16.png" },
+      { "from": "icon32.png", "to": "app/companion/icon32.png" },
+      { "from": "icon64.png", "to": "app/companion/icon64.png" },
+      { "from": "icon128.png", "to": "app/companion/icon128.png" },
+      { "from": "icon256.png", "to": "app/companion/icon256.png" }
+    ],
+    "asar": true,
+    "compression": "maximum",
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "icon": "packaging/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Trading Companion",
+      "uninstallDisplayName": "Trading Companion",
+      "installerIcon": "packaging/icon.ico",
+      "uninstallerIcon": "packaging/icon.ico",
+      "deleteAppDataOnUninstall": false
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] }
+      ],
+      "category": "public.app-category.education",
+      "icon": "packaging/icon.icns",
+      "identity": null
+    },
+    "dmg": {
+      "title": "Trading Companion ${version}"
+    },
+    "linux": {
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] },
+        { "target": "deb", "arch": ["x64"] }
+      ],
+      "category": "Education",
+      "synopsis": "Always-on-top trading coach that learns from your material",
+      "maintainer": "trading-adventure@localhost",
+      "icon": "packaging"
+    },
+    "publish": null
   }
 }

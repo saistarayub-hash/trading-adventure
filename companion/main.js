@@ -16,7 +16,15 @@ const { app, BrowserWindow, screen, desktopCapturer, ipcMain, Tray, Menu, global
 const path = require('path');
 const fs = require('fs');
 
-const ROOT = path.join(__dirname, '..');
+/*
+ * Where the app's files live. In development this is the project folder one
+ * level up. In a packaged build electron-builder copies the shared files
+ * (engine/, companion.html, …) to <resources>/app via `extraResources`,
+ * because an asar archive cannot reach outside of itself.
+ */
+const PACKAGED = app.isPackaged;
+const ROOT = PACKAGED ? path.join(process.resourcesPath, 'app') : path.join(__dirname, '..');
+const SELF = PACKAGED ? path.join(ROOT, 'companion') : __dirname;   // this folder (icons live here)
 const UI_FILE = path.join(ROOT, 'companion.html');
 
 let core = null;
@@ -73,7 +81,7 @@ function createWindow() {
     show: false,
     backgroundColor: '#0b0f16',
     title: 'Trading Companion',
-    icon: path.join(__dirname, 'icon.png'),
+    icon: path.join(SELF, 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -245,7 +253,7 @@ async function pickWindow() {
 
 function createTray() {
   try {
-    const iconPath = path.join(__dirname, process.platform === 'win32' ? 'icon16.png' : 'icon32.png');
+    const iconPath = path.join(SELF, process.platform === 'win32' ? 'icon16.png' : 'icon32.png');
     const image = nativeImage.createFromPath(iconPath);
     if (image.isEmpty()) return;
     if (process.platform === 'darwin') image.setTemplateImage(false);
@@ -325,6 +333,8 @@ const IPC = {
     node: process.versions.node,
     dataDir: core ? core.dataDir : null,
     uiFile: UI_FILE,
+    packaged: PACKAGED,
+    appRoot: ROOT,
     displays: screen.getAllDisplays().map((d) => ({ id: d.id, bounds: d.bounds, scaleFactor: d.scaleFactor }))
   })
 };

@@ -768,9 +768,13 @@ function boot() {
    and proxies nothing else). If this page was opened straight off the disk as a
    file://, the link would go nowhere — so hide it and say why in the tooltip. */
 (function () {
+  // Defensive: this file also runs inside the test harness's minimal DOM stub,
+  // where getElementById may not exist.
+  if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return;
   const el = document.getElementById('companionLink');
   if (!el) return;
-  if (window.location.protocol === 'file:') {
+  const proto = (typeof window !== 'undefined' && window.location && window.location.protocol) || '';
+  if (proto === 'file:') {
     el.style.display = 'none';
   } else {
     el.setAttribute('href', 'companion');

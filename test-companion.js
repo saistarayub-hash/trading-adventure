@@ -853,6 +853,105 @@ async function main() {
     ok('state is empty after wipe', afterWipe.json.sources.length === 0);
   }
 
+  /* ═════════════════════════ packaging & installers ═════════════════════════ */
+
+  section('packaging and installers');
+  const iconMod = require('./tools/make-icons');
+  const iconChecks = iconMod.verify();
+  const iconBad = iconChecks.filter((c) => !c.ok);
+  ok('every generated icon verifies (png/ico/icns parsed back)', iconBad.length === 0,
+    iconBad.map((x) => x.name + ' (' + x.detail + ')').join('; '));
+  ok('runtime icon set is complete', [16, 32, 64, 128, 256].every((n) => fs.existsSync(path.join(__dirname, 'companion', 'icon' + n + '.png'))));
+
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'companion', 'package.json'), 'utf8'));
+  const b = pkg.build || {};
+  ok('electron-builder config present', !!b.appId && !!b.productName, b.appId);
+  ok('packaging dirs avoid throwaway names (build/dist/out)',
+    b.directories && !/^(dist|build|out)$/.test(b.directories.output) && !/^(dist|build|out)$/.test(b.directories.buildResources),
+    JSON.stringify(b.directories));
+  for (const f of (b.files || [])) ok('packaged file exists: ' + f, fs.existsSync(path.join(__dirname, 'companion', f)));
+  const resBad = [];
+  for (const r of (b.extraResources || [])) {
+    if (!fs.existsSync(path.join(__dirname, 'companion', r.from))) resBad.push('missing ' + r.from);
+    if (!/^app\//.test(r.to)) resBad.push('bad to: ' + r.to);
+  }
+  ok('every extraResources entry exists and lands under app/', resBad.length === 0, resBad.join(', '));
+  ok('windows installer icon exists', fs.existsSync(path.join(__dirname, 'companion', b.win.icon)), b.win.icon);
+  ok('mac installer icon exists', fs.existsSync(path.join(__dirname, 'companion', b.mac.icon)), b.mac.icon);
+  ok('linux icon folder holds a >=512 png', (() => {
+    const p = path.join(__dirname, 'companion', b.linux.icon, 'icon.png');
+    if (!fs.existsSync(p)) return false;
+    const img = iconMod.readPng(fs.readFileSync(p));
+    return img.w >= 512 && img.h >= 512;
+  })());
+  ok('nsis installer makes desktop + start menu shortcuts', !!(b.nsis && b.nsis.createDesktopShortcut && b.nsis.createStartMenuShortcut));
+  ok('mac target builds unsigned (no certificate needed)', b.mac.identity === null);
+
+  // When electron-builder is installed locally, validate the config against its
+  // official JSON schema. Skipped on a fresh clone (no node_modules).
+  let ebSchema = null;
+  try { ebSchema = require(path.join(__dirname, 'companion', 'node_modules', 'app-builder-lib', 'scheme.json')); } catch (e) {}
+  if (ebSchema) {
+    const Ajv = require(path.join(__dirname, 'companion', 'node_modules', 'ajv'));
+    const ajv = new Ajv({ allErrors: true, strict: false, allowUnionTypes: true });
+    const v = ajv.compile(ebSchema);
+    const good = v(b);
+    ok('electron-builder config matches the official schema', good,
+      good ? '' : (v.errors || []).slice(0, 3).map((e) => (e.instancePath || 'root') + ' ' + e.message).join('; '));
+  } else {
+    console.log('  SKIP  electron-builder schema validation (electron-builder not installed here)');
+  }
+  ok('dist scripts exist for all three platforms', ['dist:win', 'dist:mac', 'dist:linux'].every((k) => !!pkg.scripts[k]));
+
+  // The packaged app must not 404 anything the UI asks for.
+  const uiRefs = Array.from(uiHtml.matchAll(/(?:src|href)="([^"#?]+)"/g)).map((m) => m[1])
+    .filter((u) => !/^https?:/.test(u));
+  const covered = (ref) => {
+    if (b.files.some((f) => f === ref || ref.startsWith(f.replace(/\/$/, '') + '/'))) return true;
+    for (const r of b.extraResources) {
+      // extraResources "from" is relative to companion/, refs are relative to the repo root
+      const from = path.relative(__dirname, path.resolve(path.join(__dirname, 'companion'), r.from)).split(path.sep).join('/');
+      const abs = path.resolve(path.join(__dirname, 'companion'), r.from);
+      const isDir = fs.existsSync(abs) && fs.statSync(abs).isDirectory();
+      if (isDir && (ref === from || ref.startsWith(from.replace(/\/$/, '') + '/'))) return true;
+      if (!isDir && ref === from) return true;
+    }
+    return false;
+  };
+  const uncovered = uiRefs.filter((u) => !covered(u));
+  ok('every asset the UI loads is inside the package', uncovered.length === 0, uncovered.join(', ') + ' | refs: ' + uiRefs.join(', '));
+
+  const mainSrc = fs.readFileSync(path.join(__dirname, 'companion', 'main.js'), 'utf8');
+  ok('main.js resolves paths for packaged builds', mainSrc.includes('app.isPackaged') && mainSrc.includes('process.resourcesPath'));
+  ok('main.js picks its root from isPackaged, with dev as the only fallback',
+    /const ROOT = PACKAGED \? path\.join\(process\.resourcesPath, 'app'\) : path\.join\(__dirname, '\.\.'\);/.test(mainSrc));
+
+  /* ── the installer scripts themselves ── */
+  const shPath = path.join(__dirname, 'install.sh');
+  ok('install.sh exists and is executable', fs.existsSync(shPath) && (fs.statSync(shPath).mode & 0o111) !== 0);
+  const shSrc = fs.readFileSync(shPath, 'utf8');
+  for (const flag of ['--dry-run', '--installer', '--remove', '--help']) ok('install.sh supports ' + flag, shSrc.includes(flag));
+  ok('install.sh requires node 18+', shSrc.includes('-ge 18'));
+  const { execFileSync } = require('child_process');
+  let shSyntaxOk = true;
+  try { execFileSync('bash', ['-n', shPath], { stdio: 'pipe' }); } catch (e) { shSyntaxOk = false; }
+  ok('install.sh passes bash -n', shSyntaxOk);
+  const dryOut = execFileSync(shPath, ['--dry-run'], { cwd: __dirname, encoding: 'utf8' });
+  ok('install.sh --dry-run succeeds and changes nothing', dryOut.includes('[dry-run] install the Electron shell') && dryOut.includes('(dry run'), dryOut.slice(0, 60));
+  ok('install.sh --dry-run never runs npm install for real', !/added \d+ packages/.test(dryOut));
+  const helpOut = execFileSync(shPath, ['--help'], { cwd: __dirname, encoding: 'utf8' });
+  ok('install.sh --help shows usage and nothing else', helpOut.includes('--installer') && !helpOut.includes('set -euo'), helpOut.slice(-80));
+
+  const batPath = path.join(__dirname, 'install.bat');
+  ok('install.bat exists', fs.existsSync(batPath));
+  const bat = fs.readFileSync(batPath, 'utf8');
+  ok('install.bat supports /installer, /remove, /dry, /help', ['/installer', '/remove', '/dry', '/help'].every((f) => bat.includes(f)));
+  ok('install.bat builds the nsis setup on /installer', bat.includes('dist:win') && bat.includes('release\\'));
+  ok('install.bat hides the console with a vbs launcher', bat.includes('launch.vbs') && bat.includes('Wscript.Shell'));
+  ok('install.bat shortcuts use the packaged icon', bat.includes('packaging\\icon.ico'));
+  ok('install.bat checks for node 18+', bat.includes('LSS 18'));
+  ok('install.bat has clean failure and exit paths', bat.includes(':fail') && bat.includes('exit /b 1') && bat.includes('exit /b 0'));
+
   child.kill('SIGTERM');
   await new Promise((r) => setTimeout(r, 250));
   try { child.kill('SIGKILL'); } catch {}

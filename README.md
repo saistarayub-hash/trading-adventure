@@ -24,7 +24,9 @@ videos and links, which then **watches your screen and teaches you while you tra
 * 🖱 Run it as a real desktop window, or in the browser with the identical interface.
 
 ```bash
-cd companion && npm install && npm start   # desktop panel (Electron)
+./install.sh            # one-click install on macOS/Linux (install.bat on Windows)
+./install.sh --installer   # …and build a real Setup.exe / .dmg / AppImage+.deb
+cd companion && npm install && npm start   # or run the desktop panel straight from the repo
 node server.js                             # or browser: http://localhost:8081/companion
 node tools/seed-demo.js                    # optional: load a starter library to try it immediately
 ```
