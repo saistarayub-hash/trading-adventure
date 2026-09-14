@@ -75,8 +75,16 @@ possible, and the exact assets we need from them before any of it goes into the 
 6. **Packaging identities** — separate app id/name per edition so the kid app and brand app never mix
 7. **Store/compliance review** before any public listing
 
-## Open questions (answered in chat, recorded here once confirmed)
+## Decisions (confirmed with the client's team, 2026-09-14)
 
-1. Is the brand edition the *same* trading-coach app reskinned, a separate brand game, or both?
-2. Cartoon avatars (no paperwork) or real likenesses (releases required)?
-3. Age gate + compliance footer: confirmed for v1 of the brand edition?
+1. **Scope:** the brand edition is the *same* trading-coach app, reskinned — DOC as the coach
+   character, brand palette, cannabis-culture flavour. One product, two skins.
+2. **People:** original cartoon avatars only — no likenesses, no paperwork, fully ownable art.
+   DOC is an original character (not a depiction of the owner's face) until/unless the client
+   supplies signed reference photos and wants a likeness pass later.
+3. **Compliance:** full 18+ age gate on first launch **and** a compliance footer on every screen
+   of the brand edition.
+
+Implementation note: the brand edition ships as a **switchable layer** (`brand/`, activated with
+`?brand=nlh`), so the finalized v1.1.0 product stays untouched and testable at all times. Flipping
+the default ON is a one-line decision made together with the client.

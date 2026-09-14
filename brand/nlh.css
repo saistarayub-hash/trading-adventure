@@ -1,0 +1,100 @@
+/* brand/nlh.css — Northern Lights Herb edition of the Trading Companion.
+ *
+ * Every rule is scoped under body[data-brand="nlh"], which brand/nlh.js sets
+ * only when the edition is switched on (?brand=nlh). With the flag off this
+ * stylesheet is inert and the finalized v1.1.0 product renders untouched. */
+
+body[data-brand="nlh"] {
+  --bg: #0d1020;
+  --bg2: #131730;
+  --bg3: #1b2140;
+  --line: #2a3157;
+  --line2: #3a4374;
+  --txt: #eef1ff;
+  --txt2: #a7b0d6;
+  --txt3: #7c86ad;
+  --up: #2dd4bf;          /* teal gains  */
+  --down: #fb7185;        /* rose losses */
+  --warn: #fbbf24;
+  --info: #8b5cf6;        /* violet info */
+  --accent: #a3e635;      /* lime = the brand */
+  --violet: #8b5cf6;
+}
+
+/* aurora wash behind everything, like the lights over Joburg */
+body[data-brand="nlh"]::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(60% 40% at 15% 0%, rgba(45, 212, 191, .10), transparent 60%),
+    radial-gradient(50% 35% at 85% 5%, rgba(139, 92, 246, .12), transparent 60%),
+    radial-gradient(40% 30% at 50% 100%, rgba(163, 230, 53, .05), transparent 60%);
+}
+
+body[data-brand="nlh"] #topbar {
+  background: linear-gradient(180deg, #171c38, #10142a);
+  border-bottom: 1px solid var(--line);
+}
+
+/* DOC replaces the fox in the avatar button */
+body[data-brand="nlh"] #btnAvatar {
+  background: #1b2140; border-color: var(--accent); overflow: hidden;
+}
+body[data-brand="nlh"] #btnAvatar img.doc-face {
+  width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%;
+  border-radius: inherit;
+}
+
+body[data-brand="nlh"] .btn.primary {
+  background: linear-gradient(180deg, #a3e635, #65a30d);
+  border-color: #a3e635; color: #10142a; font-weight: 800;
+}
+body[data-brand="nlh"] .chip.live { background: rgba(45, 212, 191, .15); color: #2dd4bf; border-color: #2dd4bf; }
+
+/* ── age gate ─────────────────────────────────────────────────────────── */
+body[data-brand="nlh"] .nlh-gate {
+  position: fixed; inset: 0; z-index: 400; display: grid; place-items: center;
+  background:
+    radial-gradient(70% 50% at 50% -10%, rgba(139, 92, 246, .35), transparent 60%),
+    radial-gradient(60% 45% at 20% 110%, rgba(45, 212, 191, .25), transparent 60%),
+    #0d1020;
+  text-align: center; padding: 24px; font-family: var(--sans);
+}
+body[data-brand="nlh"] .nlh-gate .gate-card {
+  max-width: 420px; background: rgba(19, 23, 48, .92); border: 1px solid var(--line2);
+  border-radius: 20px; padding: 28px 26px; box-shadow: 0 24px 70px rgba(0, 0, 0, .6);
+}
+body[data-brand="nlh"] .nlh-gate img { width: 150px; border-radius: 16px; }
+body[data-brand="nlh"] .nlh-gate h1 {
+  margin: 14px 0 2px; font-size: 24px; letter-spacing: .5px; color: #eef1ff;
+}
+body[data-brand="nlh"] .nlh-gate h1 b { color: var(--accent); }
+body[data-brand="nlh"] .nlh-gate .org { color: var(--txt2); font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase; }
+body[data-brand="nlh"] .nlh-gate p { color: var(--txt2); font-size: 14px; line-height: 1.5; }
+body[data-brand="nlh"] .nlh-gate .row { display: flex; gap: 10px; justify-content: center; margin-top: 18px; }
+body[data-brand="nlh"] .nlh-gate button {
+  border-radius: 999px; padding: 11px 22px; font-weight: 800; font-size: 14px; cursor: pointer;
+  border: 1px solid var(--line2); background: #1b2140; color: var(--txt);
+}
+body[data-brand="nlh"] .nlh-gate button.yes {
+  background: linear-gradient(180deg, #a3e635, #65a30d); border-color: #a3e635; color: #10142a;
+}
+body[data-brand="nlh"] .nlh-gate .fine { margin-top: 14px; font-size: 11px; color: var(--txt3); }
+
+/* ── splash while the gate passes ─────────────────────────────────────── */
+body[data-brand="nlh"] .nlh-splash {
+  position: fixed; inset: 0; z-index: 390; display: grid; place-items: center;
+  background: #0d1020; transition: opacity .45s ease; font-family: var(--sans);
+}
+body[data-brand="nlh"] .nlh-splash.fade { opacity: 0; pointer-events: none; }
+body[data-brand="nlh"] .nlh-splash img { width: 170px; border-radius: 18px; }
+body[data-brand="nlh"] .nlh-splash .who { margin-top: 10px; color: var(--txt2); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+
+/* ── compliance footer on every screen of the brand edition ───────────── */
+body[data-brand="nlh"] .nlh-footer {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 300;
+  background: rgba(13, 16, 32, .94); border-top: 1px solid var(--line);
+  color: var(--txt3); font-size: 10.5px; text-align: center; padding: 5px 10px;
+  font-family: var(--sans); letter-spacing: .3px;
+}
+body[data-brand="nlh"] .nlh-footer b { color: var(--txt2); }
+body[data-brand="nlh"] #app, body[data-brand="nlh"] .views { padding-bottom: 26px; }

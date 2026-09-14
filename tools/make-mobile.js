@@ -31,6 +31,8 @@ const FILES = [
 
 const ENGINE = ['embed.js', 'chunk.js', 'bm25.js', 'vision.js', 'curriculum.js', 'distill.js', 'coach.js'];
 const ICONS = ['pwa-192.png', 'pwa-512.png', 'pwa-maskable-192.png', 'pwa-maskable-512.png'];
+const BRAND = ['nlh.css', 'nlh.js'];
+const BRAND_ART = ['doc.png', 'crew-grower.png', 'crew-chemist.png', 'crew-hype.png'];
 
 function copy(from, to) {
   fs.mkdirSync(path.dirname(to), { recursive: true });
@@ -51,6 +53,12 @@ function main() {
   }
   for (const f of ICONS) {
     written.push(copy(path.join(ROOT, 'companion', 'packaging', f), path.join(WWW, 'companion', 'packaging', f)));
+  }
+  for (const f of BRAND) {
+    written.push(copy(path.join(ROOT, 'brand', f), path.join(WWW, 'brand', f)));
+  }
+  for (const f of BRAND_ART) {
+    written.push(copy(path.join(ROOT, 'brand', 'art', f), path.join(WWW, 'brand', 'art', f)));
   }
 
   // Prove the export is self-contained: every relative reference in the entry

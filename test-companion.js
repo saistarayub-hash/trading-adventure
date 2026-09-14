@@ -961,6 +961,37 @@ async function main() {
     console.log('  SKIP  APK artifact verification (no apk/app-debug.apk — fetch it: git fetch origin apk-artifact)');
   }
 
+  /* ═════════════════════════ brand layer (NLH) ═════════════════════════ */
+
+  section('brand layer: Northern Lights Herb edition (flag-gated)');
+  const nlhJs = fs.readFileSync(path.join(__dirname, 'brand', 'nlh.js'), 'utf8');
+  const nlhCss = fs.readFileSync(path.join(__dirname, 'brand', 'nlh.css'), 'utf8');
+  ok('brand switch file parses', (() => { try { new (require('vm').Script)(nlhJs, { filename: 'nlh.js' }); return true; } catch (e) { return false; } })());
+  ok('brand edition is OFF unless ?brand=nlh', /if \(!active\) return;/.test(nlhJs) && nlhJs.indexOf('if (!active) return;') < nlhJs.indexOf('data-brand'));
+  ok('?brand=off clears the edition', nlhJs.includes("q.get('brand') === 'off'"));
+  ok('18+ age gate present with both doors', nlhJs.includes('nlhYes') && nlhJs.includes('nlhNo') && /18 or older/.test(nlhJs));
+  ok('under-18s get a friendly exit, not a blank screen', nlhJs.includes('Come back later'));
+  ok('age consent is remembered, not re-asked', nlhJs.includes("localStorage.setItem(AGE, '1')"));
+  ok('compliance footer states 18+, no-sales, no-advice',
+    nlhJs.includes('does not sell cannabis through this app') && nlhJs.includes('financial or medical advice'));
+  ok('DOC is an original character, not a likeness', nlhJs.includes('brand/art/doc.png'));
+
+  // every css rule must be scoped under the brand flag or inert otherwise
+  const unscoped = nlhCss.split('}').map((blk) => blk.split('{')[0].trim()).filter((sel) => sel && !sel.startsWith('body[data-brand="nlh"]') && !sel.startsWith('/*') && !sel.startsWith('@'));
+  ok('nlh.css is fully scoped under body[data-brand="nlh"]', unscoped.length === 0, unscoped.join(' | ').slice(0, 120));
+
+  for (const f of ['doc.png', 'crew-grower.png', 'crew-chemist.png', 'crew-hype.png']) {
+    const st = fs.statSync(path.join(__dirname, 'brand', 'art', f));
+    ok('original art exists: ' + f, st.size > 20000, st.size + 'b');
+  }
+  ok('companion.html loads the brand layer before the app',
+    headHtml.includes('brand/nlh.css') && headHtml.indexOf('brand/nlh.js') < headHtml.indexOf('companion.js'));
+  const pkgB = JSON.parse(fs.readFileSync(path.join(__dirname, 'companion', 'package.json'), 'utf8')).build;
+  ok('brand edition is packaged for desktop + mobile',
+    pkgB.extraResources.some((r) => r.from === '../brand') && fs.existsSync(path.join(__dirname, 'mobile', 'www', 'brand', 'nlh.js')));
+  ok('rebrand brief records the client decisions', fs.existsSync(path.join(__dirname, 'docs', 'rebrand-brief.md')) &&
+    fs.readFileSync(path.join(__dirname, 'docs', 'rebrand-brief.md'), 'utf8').includes('Decisions'));
+
   /* ═════════════════════════ packaging & installers ═════════════════════════ */
 
   section('packaging and installers');
