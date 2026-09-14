@@ -16,8 +16,6 @@
 <meta name="apple-mobile-web-app-title" content="Companion">
 <link rel="apple-touch-icon" href="companion/packaging/pwa-192.png">
 <link rel="icon" type="image/png" sizes="192x192" href="companion/packaging/pwa-192.png">
-<!-- Northern Lights Herb edition: inert unless ?brand=nlh (see docs/rebrand-brief.md) -->
-<link rel="stylesheet" href="brand/nlh.css">
 </head>
 <body class="theme-dark" data-shell="browser">
 
@@ -46,6 +44,7 @@
   <button class="tab" data-view="feed">📥 Feed</button>
   <button class="tab" data-view="library">📚 Library</button>
   <button class="tab" data-view="learn">🎓 Learn</button>
+  <button class="tab" data-view="gym">🎮 Gym</button>
   <button class="tab" data-view="journal">📓 Journal</button>
 </nav>
 
@@ -237,6 +236,31 @@
   </section>
 
   <!-- ──────────────────────────── SETTINGS ─────────────────────────── -->
+  <section class="view" id="view-gym">
+    <div class="panel">
+      <h3>🎮 Paper Trading Gym</h3>
+      <p class="hint">Ten hands per session. Every chart has a hidden story — a trend pullback, a failed
+        breakout, a liquidity sweep, mid-range chop. You call it: long, short, or stand aside.
+        <b>Process is graded separately from outcome</b>, because a good trade can lose and a bad trade
+        can win, and only the process compounds.</p>
+      <div class="row">
+        <button class="btn primary" id="gymStart">🃏 Deal a new session</button>
+        <label class="inline">seed <input id="gymSeed" type="number" placeholder="optional" style="width:120px"></label>
+        <span class="chip chip-off" id="gymRound">no session</span>
+        <span class="chip chip-off" id="gymScore">score 0</span>
+        <span class="chip chip-off" id="gymStreak">streak 0</span>
+      </div>
+      <canvas id="gymChart" height="240" style="width:100%;display:block;border-radius:10px;background:#0d1320;border:1px solid var(--line)"></canvas>
+      <div class="row" id="gymActions">
+        <button class="btn" id="gymLong" disabled>📈 Long</button>
+        <button class="btn" id="gymShort" disabled>📉 Short</button>
+        <button class="btn" id="gymWait" disabled>⏸ Stand aside</button>
+      </div>
+      <div id="gymOut"></div>
+      <div class="row"><button class="btn small hidden" id="gymNext">➡️ Next hand</button></div>
+    </div>
+  </section>
+
   <section class="view" id="view-settings">
     <div class="panel">
       <h3>🧠 Brain (the AI that reads your screen)</h3>
@@ -396,10 +420,10 @@
 <script src="engine/curriculum.js"></script>
 <script src="engine/distill.js"></script>
 <script src="engine/coach.js"></script>
+<script src="engine/paper.js"></script>
 <!-- multi-provider AI layer, with the vision + JSON extensions -->
 <script src="ai.js"></script>
 <!-- companion UI -->
-<script src="brand/nlh.js"></script>
 <script src="companion.js"></script>
 </body>
 </html>

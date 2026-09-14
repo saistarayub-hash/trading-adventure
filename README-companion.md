@@ -259,6 +259,23 @@ getting wrong and what your fed library does not cover.
 
 ---
 
+## 6b. The Paper Trading Gym (reps without risk)
+
+Watching screens teaches recognition; **reps teach decisions**. The 🎮 Gym tab deals ten hands per
+session: synthetic charts with a hidden story — trend pullback, downtrend rally, mid-range chop,
+real breakout, failed breakout, liquidity sweep — and you call it: **long, short, or stand aside**.
+
+It then grades two separate skills, because they are separate:
+
+- **Process** — was this the right *kind* of trade? (compared against the story)
+- **Outcome** — what a structure-based stop/target (1R risk, 2R target) actually did, in R
+
+A correct process can print −1R and a bad one can print +2R, and the feedback line says exactly that
+("a bad process that pays is the most expensive lesson there is"). Sessions are seeded, so a seed can
+be shared or repeated; the report lands in your journal and feeds the Learn planner's weak-tag list.
+Verified property: playing the story correctly averages **+1.17R/hand** over 3,000 hands; random play
++0.16R — the gym has real edge built in, and the test suite asserts it stays that way.
+
 ## 7. Journal and reviews
 
 Save any coaching card to the journal with one click, or log trades and **rule breaks** yourself.

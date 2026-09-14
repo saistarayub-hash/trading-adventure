@@ -961,36 +961,77 @@ async function main() {
     console.log('  SKIP  APK artifact verification (no apk/app-debug.apk — fetch it: git fetch origin apk-artifact)');
   }
 
-  /* ═════════════════════════ brand layer (NLH) ═════════════════════════ */
+  /* ═════════════════════════ paper trading gym ═════════════════════════ */
 
-  section('brand layer: Northern Lights Herb edition (flag-gated)');
-  const nlhJs = fs.readFileSync(path.join(__dirname, 'brand', 'nlh.js'), 'utf8');
-  const nlhCss = fs.readFileSync(path.join(__dirname, 'brand', 'nlh.css'), 'utf8');
-  ok('brand switch file parses', (() => { try { new (require('vm').Script)(nlhJs, { filename: 'nlh.js' }); return true; } catch (e) { return false; } })());
-  ok('brand edition is OFF unless ?brand=nlh', /if \(!active\) return;/.test(nlhJs) && nlhJs.indexOf('if (!active) return;') < nlhJs.indexOf('data-brand'));
-  ok('?brand=off clears the edition', nlhJs.includes("q.get('brand') === 'off'"));
-  ok('18+ age gate present with both doors', nlhJs.includes('nlhYes') && nlhJs.includes('nlhNo') && /18 or older/.test(nlhJs));
-  ok('under-18s get a friendly exit, not a blank screen', nlhJs.includes('Come back later'));
-  ok('age consent is remembered, not re-asked', nlhJs.includes("localStorage.setItem(AGE, '1')"));
-  ok('compliance footer states 18+, no-sales, no-advice',
-    nlhJs.includes('does not sell cannabis through this app') && nlhJs.includes('financial or medical advice'));
-  ok('DOC is an original character, not a likeness', nlhJs.includes('brand/art/doc.png'));
+  section('engine/paper.js — the paper trading gym');
+  const PAPER = require('./engine/paper');
+  ok('same seed deals the same session',
+    JSON.stringify(PAPER.createSession(42).current().ctx) === JSON.stringify(PAPER.createSession(42).current().ctx));
+  ok('different seeds deal different sessions',
+    JSON.stringify(PAPER.createSession(42).current().ctx) !== JSON.stringify(PAPER.createSession(43).current().ctx));
 
-  // every css rule must be scoped under the brand flag or inert otherwise
-  const unscoped = nlhCss.split('}').map((blk) => blk.split('{')[0].trim()).filter((sel) => sel && !sel.startsWith('body[data-brand="nlh"]') && !sel.startsWith('/*') && !sel.startsWith('@'));
-  ok('nlh.css is fully scoped under body[data-brand="nlh"]', unscoped.length === 0, unscoped.join(' | ').slice(0, 120));
-
-  for (const f of ['doc.png', 'crew-grower.png', 'crew-chemist.png', 'crew-hype.png']) {
-    const st = fs.statSync(path.join(__dirname, 'brand', 'art', f));
-    ok('original art exists: ' + f, st.size > 20000, st.size + 'b');
+  let ohlcOk = true; let badWhy = '';
+  for (const t of PAPER.TYPES) {
+    for (const seed of [1, 2, 3, 4, 5]) {
+      const sc = PAPER.buildScenario(PAPER.rng(seed), t);
+      for (const k of sc.ctx.concat(sc.fut)) {
+        if (!(k.h >= Math.max(k.o, k.c) - 1e-9 && k.l <= Math.min(k.o, k.c) + 1e-9)) { ohlcOk = false; badWhy = t; }
+      }
+      if (sc.ctx.length < 30 || sc.fut.length < 20) { ohlcOk = false; badWhy = t + ' len'; }
+    }
   }
-  ok('companion.html loads the brand layer before the app',
-    headHtml.includes('brand/nlh.css') && headHtml.indexOf('brand/nlh.js') < headHtml.indexOf('companion.js'));
-  const pkgB = JSON.parse(fs.readFileSync(path.join(__dirname, 'companion', 'package.json'), 'utf8')).build;
-  ok('brand edition is packaged for desktop + mobile',
-    pkgB.extraResources.some((r) => r.from === '../brand') && fs.existsSync(path.join(__dirname, 'mobile', 'www', 'brand', 'nlh.js')));
-  ok('rebrand brief records the client decisions', fs.existsSync(path.join(__dirname, 'docs', 'rebrand-brief.md')) &&
-    fs.readFileSync(path.join(__dirname, 'docs', 'rebrand-brief.md'), 'utf8').includes('Decisions'));
+  ok('every story produces valid OHLC candles (h≥body, l≤body)', ohlcOk, badWhy);
+  ok('six stories, each with a best action and a curriculum tag',
+    PAPER.TYPES.length === 6 && PAPER.TYPES.every((t) => ['long', 'short', 'wait'].indexOf(PAPER.META[t].best) >= 0 && !!PAPER.META[t].tag));
+
+  const sc0 = PAPER.buildScenario(PAPER.rng(9), 'trend-pullback');
+  const pl = PAPER.planFor(sc0, 'long');
+  ok('long plan: stop below entry, target exactly 2R', pl.stop < pl.entry &&
+    Math.abs((pl.target - pl.entry) - 2 * (pl.entry - pl.stop)) < 1e-6);
+  const ps = PAPER.planFor(sc0, 'short');
+  ok('short plan mirrors the long', ps.stop > ps.entry &&
+    Math.abs((ps.entry - ps.target) - 2 * (ps.stop - ps.entry)) < 1e-6);
+  ok('standing aside plans zero risk', PAPER.planFor(sc0, 'wait').r === 0 && PAPER.planFor(sc0, 'wait').stop === null);
+
+  const ses = PAPER.createSession(77);
+  ok('a session deals ten hands', ses.state.rounds === 10 && ses.state.done === false);
+  let allCorrect = true;
+  while (!ses.state.done) { const cur = ses.current(); if (!ses.answer(cur.meta.best).correct) allCorrect = false; }
+  const sum = ses.summary();
+  ok('playing the story perfectly scores 10/10 process', allCorrect && sum.correct === 10 && sum.bestStreak === 10, JSON.stringify(sum));
+  ok('summary reports hit rate, R sum and weak tags', sum.hitRate === 100 && typeof sum.rSum === 'number' && Array.isArray(sum.weak));
+
+  const w = PAPER.createSession(78).answer('wait');
+  ok('standing aside always realises 0R', w.r === 0);
+  ok('feedback grades process and outcome in one line', w.note.length > 40 && /R/.test(w.note), w.note.slice(0, 60));
+  let threw = false;
+  try { const s3 = PAPER.createSession(5); for (let i = 0; i < 10; i++) s3.answer('wait'); s3.answer('wait'); } catch (e) { threw = true; }
+  ok('answering after the session ends throws', threw);
+  let threw2 = false;
+  try { PAPER.createSession(5).answer('yolo'); } catch (e) { threw2 = true; }
+  ok('invalid actions are rejected', threw2);
+
+  // The gym must teach true edge: correct process outperforms random play,
+  // measurably, on fixed seeds (deterministic, so this never flakes).
+  let rBest = 0; let rRand = 0; let hands = 0;
+  for (let seed = 1; seed <= 60; seed++) {
+    const s = PAPER.createSession(seed);
+    while (!s.state.done) { rBest += s.answer(s.current().meta.best).r; hands++; }
+    const s2 = PAPER.createSession(seed + 9000);
+    while (!s2.state.done) { rRand += s2.answer(['long', 'short', 'wait'][seed % 3]).r; }
+  }
+  ok('correct process has a real edge over random play',
+    rBest / hands > 0.5 && rBest / hands > rRand / hands + 0.3,
+    (rBest / hands).toFixed(2) + 'R vs ' + (rRand / hands).toFixed(2) + 'R per hand');
+
+  ok('gym tab, view, canvas and decision buttons exist in the UI',
+    uiHtml.includes('data-view="gym"') && uiHtml.includes('id="view-gym"') &&
+    ['gymChart', 'gymLong', 'gymShort', 'gymWait', 'gymNext', 'gymStart'].every((id) => uiHtml.includes('id="' + id + '"')));
+  ok('UI loads engine/paper.js and the worker precaches it',
+    uiHtml.includes('engine/paper.js') && swSrc.includes("'/engine/paper.js'"));
+  ok('gym controller is wired into boot', uiJs.includes('function bindGym') && uiJs.includes('bindGym();') &&
+    uiJs.includes('TCEngine.paper.createSession'));
+  ok('session report lands in the journal', uiJs.includes("kind: 'win'") && uiJs.includes('Gym session (seed '));
 
   /* ═════════════════════════ packaging & installers ═════════════════════════ */
 

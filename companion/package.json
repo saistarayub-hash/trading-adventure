@@ -119,15 +119,6 @@
       {
         "from": "packaging/pwa-maskable-512.png",
         "to": "app/companion/packaging/pwa-maskable-512.png"
-      },
-      {
-        "from": "../brand",
-        "to": "app/brand",
-        "filter": [
-          "**/*.css",
-          "**/*.js",
-          "**/*.png"
-        ]
       }
     ],
     "asar": true,

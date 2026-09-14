@@ -1725,6 +1725,154 @@ function bindChrome() {
   });
 }
 
+/* ══════════════════════════════ paper trading gym ══════════════════════════ */
+
+let GYM = null;          // active session from engine/paper.js
+let GYM_SC = null;       // scenario on screen right now
+
+function gymSetButtons(on) {
+  ['#gymLong', '#gymShort', '#gymWait'].forEach((s) => { $(s).disabled = !on; });
+}
+
+function gymChips() {
+  if (!GYM) return;
+  $('#gymRound').textContent = GYM.state.done ? 'session over' : 'hand ' + (GYM.state.i + 1) + '/' + GYM.state.rounds;
+  $('#gymRound').className = 'chip';
+  $('#gymScore').textContent = 'score ' + GYM.state.score;
+  $('#gymScore').className = 'chip';
+  $('#gymStreak').textContent = 'streak ' + GYM.state.streak;
+  $('#gymStreak').className = 'chip' + (GYM.state.streak >= 3 ? ' live' : '');
+}
+
+function gymDraw(ctxCandles, fut, plan) {
+  const cv = $('#gymChart');
+  if (!cv || !cv.getContext) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(cv.clientWidth || 600, 320);
+  const h = 240;
+  cv.width = w * dpr; cv.height = h * dpr;
+  const g = cv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  const all = ctxCandles.concat(fut || []);
+  let hi = -Infinity; let lo = Infinity;
+  for (const k of all) { if (k.h > hi) hi = k.h; if (k.l < lo) lo = k.l; }
+  if (plan && plan.stop != null) { hi = Math.max(hi, plan.stop, plan.target); lo = Math.min(lo, plan.stop, plan.target); }
+  const pad = (hi - lo) * 0.06 || 1;
+  hi += pad; lo -= pad;
+  const X = (i) => ((i + 0.5) * w) / all.length;
+  const Y = (p) => 6 + ((hi - p) / (hi - lo)) * (h - 12);
+  const cw = Math.max(2, (w / all.length) * 0.62);
+
+  // the future stays dimmed until you commit; the divider is your decision point
+  const split = ctxCandles.length;
+  g.strokeStyle = 'rgba(163,230,53,.55)';
+  g.setLineDash([4, 4]);
+  g.beginPath(); g.moveTo(X(split - 0.5), 4); g.lineTo(X(split - 0.5), h - 4); g.stroke();
+  g.setLineDash([]);
+  g.fillStyle = 'rgba(163,230,53,.8)';
+  g.font = '600 10px Inter, sans-serif';
+  g.fillText(fut ? 'WHAT ACTUALLY HAPPENED →' : 'YOU DECIDE →', Math.min(X(split) + 6, w - 150), 14);
+
+  all.forEach((k, i) => {
+    const up = k.c >= k.o;
+    g.globalAlpha = i < split ? 1 : 0.75;
+    g.strokeStyle = up ? '#26d07c' : '#ff5470';
+    g.fillStyle = up ? '#26d07c' : '#ff5470';
+    g.beginPath(); g.moveTo(X(i), Y(k.h)); g.lineTo(X(i), Y(k.l)); g.stroke();
+    const yO = Y(k.o); const yC = Y(k.c);
+    g.fillRect(X(i) - cw / 2, Math.min(yO, yC), cw, Math.max(Math.abs(yO - yC), 1.4));
+  });
+  g.globalAlpha = 1;
+
+  if (plan && plan.stop != null) {
+    const line = (p, col, label) => {
+      g.strokeStyle = col; g.setLineDash([6, 4]);
+      g.beginPath(); g.moveTo(0, Y(p)); g.lineTo(w, Y(p)); g.stroke();
+      g.setLineDash([]);
+      g.fillStyle = col; g.font = '600 9.5px JetBrains Mono, monospace';
+      g.fillText(label, 4, Y(p) - 3);
+    };
+    line(plan.entry, '#e6edf6', 'entry ' + plan.entry);
+    line(plan.stop, '#ff5470', 'stop ' + plan.stop);
+    line(plan.target, '#26d07c', 'target ' + plan.target + ' (2R)');
+  }
+}
+
+function gymRenderRound() {
+  const sc = GYM && GYM.current();
+  gymChips();
+  if (!sc) { gymSummaryView(); return; }
+  GYM_SC = sc;
+  $('#gymOut').innerHTML = '';
+  $('#gymNext').classList.add('hidden');
+  gymSetButtons(true);
+  gymDraw(sc.ctx, null, null);
+}
+
+function gymStart() {
+  const seedRaw = Number($('#gymSeed').value);
+  const seed = seedRaw > 0 ? seedRaw : (Date.now() % 2147483647);
+  GYM = TCEngine.paper.createSession(seed);
+  gymRenderRound();
+  setStatus('gym session ' + seed + ' dealt');
+}
+
+function gymAnswer(action) {
+  if (!GYM || GYM.state.done) return;
+  const sc = GYM_SC;
+  const res = GYM.answer(action);
+  gymSetButtons(false);
+  gymChips();
+  gymDraw(sc.ctx, res.future, { entry: res.entry, stop: res.stop, target: res.target });
+  const cls = res.correct ? 'insight' : 'insight warn';
+  $('#gymOut').innerHTML =
+    '<div class="' + cls + '" style="margin-top:10px">' +
+    '<b>' + (res.correct ? 'Process ✅' : 'Process ❌') + '</b> · ' + esc(res.title) +
+    ' · you: <b>' + res.action + '</b>' + (res.action !== 'wait' ? ' (stop ' + res.stop + ', target ' + res.target + ')' : '') +
+    ' · outcome: <b>' + (res.r > 0 ? '+' : '') + res.r + 'R</b>' +
+    '<div style="margin-top:6px">' + esc(res.note) + '</div>' +
+    '</div>';
+  $('#gymNext').classList.remove('hidden');
+  $('#gymNext').textContent = GYM.state.done ? '🏁 See session report' : '➡️ Next hand';
+}
+
+function gymSummaryView() {
+  if (!GYM) return;
+  const s = GYM.summary();
+  gymSetButtons(false);
+  $('#gymNext').classList.add('hidden');
+  const rows = Object.keys(s.tags).map((t) =>
+    '<div class="row" style="justify-content:space-between"><span>' + esc(t) + '</span><b>' +
+    s.tags[t].correct + '/' + s.tags[t].seen + '</b></div>').join('');
+  $('#gymOut').innerHTML =
+    '<div class="insight" style="margin-top:10px"><b>🏁 Session report</b> (seed ' + s.seed + ')<br>' +
+    'Process hits: <b>' + s.correct + '/' + s.rounds + '</b> (' + s.hitRate + '%) · Total outcome: <b>' +
+    (s.rSum > 0 ? '+' : '') + s.rSum + 'R</b> · Best streak: <b>' + s.bestStreak + '</b> · Score: <b>' + s.score + '</b>' +
+    '<div style="margin-top:8px">' + rows + '</div>' +
+    (s.weak.length
+      ? '<div style="margin-top:8px">Drill next: <b>' + s.weak.map(esc).join('</b>, <b>') + '</b> — the Learn tab already prioritises them.</div>'
+      : '<div style="margin-top:8px">Clean sheet. Deal another ten or go watch a real screen.</div>') +
+    '</div>';
+  Backend.addJournal({
+    kind: 'win',
+    text: 'Gym session (seed ' + s.seed + '): ' + s.correct + '/' + s.rounds + ' process hits, ' +
+      s.rSum + 'R, best streak ' + s.bestStreak + (s.weak.length ? '. Weak: ' + s.weak.join(', ') : '.'),
+    tags: s.weak.length ? s.weak : ['trading plan']
+  }).catch(() => {});
+  toast('Session saved to your journal: ' + s.correct + '/' + s.rounds + ' process hits.', 'ok');
+}
+
+function bindGym() {
+  $('#gymStart').addEventListener('click', gymStart);
+  $('#gymLong').addEventListener('click', () => gymAnswer('long'));
+  $('#gymShort').addEventListener('click', () => gymAnswer('short'));
+  $('#gymWait').addEventListener('click', () => gymAnswer('wait'));
+  $('#gymNext').addEventListener('click', () => {
+    if (GYM && GYM.state.done) gymSummaryView(); else gymRenderRound();
+  });
+}
+
 /* ── installable app (Android / iOS / desktop Chrome) ─────────────────────── */
 let deferredInstall = null;
 
@@ -1792,6 +1940,7 @@ async function boot() {
 
   makeCoach();
   bindChrome();
+  bindGym();
   bindSettings();
   renderBrainSettings();
   await loadState();

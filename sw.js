@@ -24,6 +24,7 @@ const SHELL = [
   '/engine/curriculum.js',
   '/engine/distill.js',
   '/engine/coach.js',
+  '/engine/paper.js',
   '/companion/packaging/pwa-192.png',
   '/companion/packaging/pwa-512.png',
   '/companion/packaging/pwa-maskable-192.png',

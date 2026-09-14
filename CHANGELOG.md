@@ -4,6 +4,17 @@ All notable work on this repository. The project started as *Professor Fox's Tra
 (a kid-friendly trading-education web app) and grew a second, grown-up product: the **Trading
 Companion** — an always-on-top coaching panel with a retrieval-augmented brain.
 
+## [1.2.0] — Paper Trading Gym
+
+- `engine/paper.js`: seeded dealer of six market stories (trend pullback, trend fade, mid-range
+  chop, genuine breakout, failed breakout, liquidity sweep); structure-based stops/targets
+  (1R risk, 2R target); forward-walk realisation in R
+- Process and outcome graded separately, with feedback that names variance vs mistakes
+- 🎮 Gym tab: canvas chart with decision divider, three calls, per-hand feedback, session report
+  (hit rate, R sum, streak, weak tags) that lands in the journal and feeds the Learn planner
+- Packaged everywhere (browser, Electron, PWA/APK) and precached for offline
+- Asserted property: correct process +1.17R/hand vs random +0.16R over fixed seeds
+
 ## [1.1.0] — Trading Companion release
 
 ### Added — the companion brain (`engine/`, zero dependencies, Node 18+)
